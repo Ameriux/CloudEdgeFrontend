@@ -1,9 +1,9 @@
 <template>
   <div class="overview-container">
     <div class="header-actions">
-      <el-button type="primary" @click="navigateToAuthServer">
+      <!-- <el-button type="primary" @click="navigateToAuthServer">
         跳转到认证服务器
-      </el-button>
+      </el-button> -->
     </div>
 
     <div class="topology-diagram">
@@ -16,17 +16,46 @@
 <script>
 import { defineComponent, onMounted, ref } from 'vue'
 import * as d3 from 'd3'
+import { useStore } from 'vuex'
 
 export default defineComponent({
   name: 'Overview',
   setup() {
     const topologyContainer = ref(null)
-
+    const store = useStore()
+    
+    // 初始化时获取客户端列表并监听变化
     onMounted(() => {
-      if (topologyContainer.value) {
-        renderTopology(topologyContainer.value)
-      }
-    })
+        if (topologyContainer.value) {
+          renderTopology(topologyContainer.value)
+        }
+
+        // 添加窗口大小变化监听
+        const handleResize = () => {
+          if (topologyContainer.value) {
+            renderTopology(topologyContainer.value)
+          }
+        }
+
+        window.addEventListener('resize', handleResize)
+        
+        // 监听客户端列表变化
+        const unsubscribe = store.subscribe((mutation) => {
+          if (mutation.type === 'clients/SET_CLIENTS' || 
+              mutation.type === 'clients/ADD_CLIENT' || 
+              mutation.type === 'clients/UPDATE_CLIENT_STATUS') {
+            if (topologyContainer.value) {
+              renderTopology(topologyContainer.value)
+            }
+          }
+        })
+
+        // 清理函数
+        return () => {
+          window.removeEventListener('resize', handleResize)
+          unsubscribe()
+        }
+      })
 
     const navigateToAuthServer = () => {
       // 这里预留后端接口位置
@@ -35,19 +64,24 @@ export default defineComponent({
     }
 
     const renderTopology = (container) => {
-      // 清除之前的内容
-      d3.select(container).select('svg').remove()
+        // 清除之前的内容
+        d3.select(container).select('svg').remove()
 
-      // 设置SVG尺寸
-      const width = 900
-      const height = 500
+        // 获取容器的实际尺寸
+        const containerRect = container.getBoundingClientRect()
+        const actualWidth = containerRect.width
+        const actualHeight = containerRect.height
+
+        // 动态计算节点间距，确保在不同尺寸下都有良好显示
+        const nodeDistance = Math.min(actualWidth / 6, 120)
+        const nodeRadius = Math.min(actualHeight / 20, 30)
 
       // 创建SVG
-      const svg = d3.select(container)
-        .append('svg')
-        .attr('width', width)
-        .attr('height', height)
-        .style('background-color', '#f9f9f9')
+        const svg = d3.select(container)
+          .append('svg')
+          .attr('width', actualWidth)
+          .attr('height', actualHeight)
+          .style('background-color', '#f9f9f9')
 
       // 添加左侧层级标识
       svg.append('g')
@@ -77,33 +111,49 @@ export default defineComponent({
         .attr('fill', '#3498db')
         .text('Cloud')
 
+      // 从store获取客户端列表
+      let clientList = store.getters['clients/getAllClients'] || []
+      
+      // 如果没有客户端列表，使用mock数据（仅用于开发测试）
+      if (!clientList || clientList.length === 0) {
+        console.log('没有实际客户端数据，使用示例数据展示拓扑图')
+        // 注意：根据需求，这里不添加任何客户端节点
+      }
+      
       // 定义节点数据
-      const nodes = [
-        { id: 'client1', name: 'Client1', group: 1, x: 200, y: 100 },
-        { id: 'client2', name: 'Client2', group: 1, x: 350, y: 100 },
-        { id: 'client3', name: 'Client3', group: 1, x: 500, y: 100 },
-        { id: 'edge1', name: 'EdgeServer1', group: 2, x: 250, y: 250 },
-        { id: 'edge2', name: 'EdgeServer2', group: 2, x: 450, y: 250 },
-        { id: 'cloud1', name: 'Cloud1', group: 3, x: 200, y: 400 },
-        { id: 'cloud2', name: 'Cloud2', group: 3, x: 500, y: 400 }
-      ]
+      const nodes = []
+      // 添加固定的EdgeServer和Cloud节点
+      nodes.push({ id: 'edge1', name: 'EdgeServer1', group: 2, x: actualWidth / 2, y: 250 })
+      nodes.push({ id: 'cloud1', name: 'Cloud1', group: 3, x: actualWidth / 2, y: 400 })
+      
+      // 动态添加客户端节点
+      const clientCount = clientList.length
+      const startX = actualWidth / 2 - (clientCount - 1) * nodeDistance / 2
+      
+      clientList.forEach((client, index) => {
+        nodes.push({
+          id: `client-${client.name}`,
+          name: `client: ${client.name}`,
+          group: 1,
+          x: startX + index * nodeDistance,
+          y: 100
+        })
+      })
 
       // 定义链接数据
-      const links = [
-        { source: 'client1', target: 'edge1' },
-        { source: 'client2', target: 'edge1' },
-        { source: 'client2', target: 'edge2' },
-        { source: 'client3', target: 'edge2' },
-        { source: 'edge1', target: 'cloud2' },
-        { source: 'edge2', target: 'cloud1' },
-        { source: 'edge2', target: 'cloud2' }
-      ]
+      const links = []
+      // 所有客户端连接到EdgeServer
+      clientList.forEach(client => {
+        links.push({ source: `client-${client.name}`, target: 'edge1' })
+      })
+      // EdgeServer连接到Cloud
+      links.push({ source: 'edge1', target: 'cloud1' })
 
       // 创建力导向图
       const simulation = d3.forceSimulation(nodes)
-        .force('link', d3.forceLink(links).id(d => d.id).distance(120))
+        .force('link', d3.forceLink(links).id(d => d.id).distance(nodeDistance))
         .force('charge', d3.forceManyBody().strength(-2000))
-        .force('center', d3.forceCenter(width / 2, height / 2))
+        .force('center', d3.forceCenter(actualWidth / 2, actualHeight / 2))
         // 保持节点在指定的y轴位置附近
         .force('y', d3.forceY(d => {
           if (d.group === 1) return 100
@@ -134,10 +184,10 @@ export default defineComponent({
 
       // 绘制节点图片
       node.append('image')
-        .attr('x', -30)
-        .attr('y', -30)
-        .attr('width', 60)
-        .attr('height', 60)
+        .attr('x', -nodeRadius)
+        .attr('y', -nodeRadius)
+        .attr('width', nodeRadius * 2)
+        .attr('height', nodeRadius * 2)
         .attr('xlink:href', d => {
           if (d.group === 1) return '/src/assets/终端设备.png'
           if (d.group === 2) return '/src/assets/服务器.png'
@@ -146,10 +196,10 @@ export default defineComponent({
 
       // 绘制节点标签
       node.append('text')
-        .attr('dy', '40')
+        .attr('dy', nodeRadius + 10)
         .attr('text-anchor', 'middle')
         .attr('fill', '#333')
-        .attr('font-size', 12)
+        .attr('font-size', Math.max(nodeRadius / 3, 10))
         .text(d => d.name)
 
       // 节点点击事件
@@ -223,7 +273,9 @@ export default defineComponent({
 
 #topology-container {
   width: 100%;
-  height: 500px;
+  height: 70vh;
+  min-height: 400px;
+  max-height: 800px;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   overflow: hidden;

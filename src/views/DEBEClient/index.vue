@@ -3,21 +3,18 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>Client列表</span>
+          <span>客户端列表</span>
+          <el-button type="primary" size="small" @click="createNewClient">新建客户端</el-button>
         </div>
       </template>
 
-      <el-table v-loading="loading" :data="clientList" style="width: 100%">
-        <el-table-column prop="id" label="序号" min-width="80"></el-table-column>
-        <el-table-column prop="name" label="名称" min-width="180"></el-table-column>
-        <el-table-column prop="status" label="状态" min-width="120">
+      <el-table :data="clients" style="width: 100%">
+        <el-table-column prop="id" label="序号" min-width="100"></el-table-column>
+        <el-table-column prop="name" label="客户端ID" min-width="100"></el-table-column>
+        <el-table-column prop="status" label="状态" min-width="80"></el-table-column>
+        <el-table-column label="操作" min-width="100" fixed="right">
           <template #default="scope">
-            <el-tag :type="scope.row.status === 'running' ? 'success' : 'danger'"> {{ scope.row.status === 'running' ? '启动' : '未启动' }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" min-width="120" fixed="right">
-          <template #default="scope">
-            <el-button type="primary" size="small" @click="viewClientInfo(scope.row)">查看信息</el-button>
+            <el-button type="primary" size="small" @click="enterWorkspace(scope.row)">进入工作区</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -27,36 +24,91 @@
 
 <script>
 import { defineComponent, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { useStore } from 'vuex'
 
 export default defineComponent({
-  name: 'ClientList',
+  name: 'DEBEClientList',
   setup() {
-    const clientList = ref([])
-    const loading = ref(true)
+    const router = useRouter()
+    const store = useStore()
+    const clients = ref([])
 
-    onMounted(() => {
-      // 模拟从后端获取数据
-      setTimeout(() => {
-        clientList.value = [
-          { id: 1, name: 'Client1', status: 'running' },
-          { id: 2, name: 'Client2', status: 'running' },
-          { id: 3, name: 'Client3', status: 'stopped' }
-        ]
-        loading.value = false
-      }, 1000)
-    })
-
-    const viewClientInfo = (client) => {
-      // 这里预留后端接口位置
-      console.log('查看客户端信息:', client)
-      // 实际应用中可以使用ElementUI的对话框组件展示详细信息
-      alert(`客户端名称: ${client.name}\n客户端ID: ${client.id}\n客户端状态: ${client.status === 'running' ? '启动' : '未启动'}`)
+    // 创建新客户端
+    const createNewClient = () => {
+      // 使用相对路径解决CORS跨域问题
+      fetch('/api-internal/run/client', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.status === 'success' && data.all_client_ids && data.all_client_ids.length > 0) {
+            // 直接使用接口返回的all_client_ids数组更新客户端列表
+            const clientList = data.all_client_ids.map((clientId, index) => ({
+              id: index + 1,
+              name: clientId.toString(),
+              status: 'running',
+              sessionKey: ''
+            }))
+            
+            // 更新本地ref和全局store
+            clients.value = clientList
+            store.dispatch('clients/setClients', clientList)
+            
+            ElMessage.success('客户端创建成功')
+            // 生成对应的上传和下载界面
+            generateClientWorkspaces(data.all_client_ids[data.all_client_ids.length - 1])
+          } else {
+            throw new Error('创建客户端失败: ' + (data.message || '未知错误'))
+          }
+        })
+        .catch(error => {
+          console.error('创建客户端失败:', error)
+          ElMessage.error('创建客户端失败，请重试')
+        })
     }
 
+    // 进入工作区
+    const enterWorkspace = (client) => {
+      // 跳转到对应客户端的上传界面
+      router.push(`/debeclient/upload/${client.name}`)
+    }
+
+    // 获取客户端列表（页面加载时使用）
+    const fetchClientList = () => {
+      // 先从store获取客户端列表
+      const storedClients = store.getters['clients/getAllClients']
+      
+      if (storedClients && storedClients.length > 0) {
+        // 如果store中有数据，使用store的数据
+        clients.value = storedClients
+      } else {
+        // 最开始列表为空，不设置默认客户端
+        clients.value = []
+      }
+    }
+
+    // 生成客户端工作区
+    const generateClientWorkspaces = (clientId) => {
+      console.log(`为客户端 ${clientId} 生成工作区`)
+      // 通过URL参数的方式实现客户端工作区隔离
+      // 不需要物理创建新的文件，而是通过组件动态显示对应客户端的工作区
+      // 上传和下载界面已通过路由配置支持客户端ID参数
+    }
+
+    onMounted(() => {
+      fetchClientList()
+    })
+
     return {
-      clientList,
-      loading,
-      viewClientInfo
+      clients,
+      createNewClient,
+      enterWorkspace,
+      fetchClientList
     }
   }
 })

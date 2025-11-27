@@ -20,9 +20,41 @@
           active-text-color="#27ae60"
           router
         >
-          <el-menu-item index="/"
+          <el-menu-item index="/" 
             ><i class="el-icon-s-home"></i><span>总览</span></el-menu-item
           >
+          <el-sub-menu index="/mfa">
+            <template #title>
+              <i class="el-icon-lock"></i><span>多因子认证</span>
+            </template>
+            <el-menu-item index="/mfa/auth"
+              >认证流程</el-menu-item
+            >
+            <el-menu-item v-if="userInfo && userInfo.is_superuser" index="/mfa/device"
+              >设备管理</el-menu-item
+            >
+            <el-menu-item v-if="!isLoggedIn" index="/mfa/login"
+              >登录</el-menu-item
+            >
+            <template v-else>
+              <el-menu-item index="/mfa/Items"
+                >Items</el-menu-item
+              >
+              <el-menu-item index="/mfa/userInfo"
+                >用户信息</el-menu-item
+              >
+              <el-menu-item index="/mfa/ip-test"
+                >IP异常测试</el-menu-item
+              >
+              <el-menu-item index="/mfa/email-alert"
+                >邮件告警测试</el-menu-item
+              >
+              <el-menu-item index="/mfa/ErrorLog"
+                >异常日志</el-menu-item
+              >
+            </template>
+            
+          </el-sub-menu>
           <el-sub-menu index="/debeclient">
             <template #title>
               <i class="el-icon-laptop"></i><span>Client</span>
@@ -30,31 +62,82 @@
             <el-menu-item index="/debeclient"
               >客户端列表</el-menu-item
             >
-            <el-menu-item index="/debeclient/upload"
-              >上传</el-menu-item>
-            <el-menu-item index="/debeclient/download"
-              >下载</el-menu-item
-            >
-            <el-menu-item index="/debeclient/log"
-              >历史日志</el-menu-item
-            >
+            
+            <!-- 上传目录 -->
+            <el-sub-menu :index="'upload-dir'">
+              <template #title>
+                <i class="el-icon-upload"></i><span>上传</span>
+              </template>
+              <!-- 为每个客户端生成上传子菜单项 -->
+              <el-menu-item 
+                v-for="client in clients" 
+                :key="`upload-${client.name}`" 
+                :index="`/debeclient/upload/${client.name}`"
+              >
+                {{ client.name }}
+              </el-menu-item>
+            </el-sub-menu>
+            
+            <!-- 下载目录 -->
+            <el-sub-menu :index="'download-dir'">
+              <template #title>
+                <i class="el-icon-download"></i><span>下载</span>
+              </template>
+              <!-- 为每个客户端生成下载子菜单项 -->
+              <el-menu-item 
+                v-for="client in clients" 
+                :key="`download-${client.name}`" 
+                :index="`/debeclient/download/${client.name}`"
+              >
+                {{ client.name }}
+              </el-menu-item>
+            </el-sub-menu>
+            
+
           </el-sub-menu>
           <el-sub-menu index="edgeserver">
             <template #title>
               <i class="el-icon-server"></i><span>EdgeServer</span>
             </template>
-            <el-menu-item index="/edgeserver/workbench1"
-              >工作台</el-menu-item
+            <el-menu-item index="/edgeserver"
+              >设备管理</el-menu-item
             >
+            <!-- <el-menu-item index="/edgeserver/workbench1"
+              >日志记录&同态加密</el-menu-item
+            > -->
+            <!-- 动态生成设备工作区子菜单 -->
+            <el-sub-menu index="3-3" v-if="edgeServers.length > 0">
+              <template #title>
+                <el-icon><Menu /></el-icon>
+                <span>设备工作区</span>
+              </template>
+              <el-menu-item
+                v-for="server in edgeServers"
+                :key="server.id"
+                :index="`3-3-${server.id}`"
+                @click="$router.push(`/edgeserver/workspace/${server.id}`)"
+              >
+                {{ server.deviceName }}
+              </el-menu-item>
+            </el-sub-menu>
           </el-sub-menu>
-          <el-sub-menu index="cloudserver">
+          <el-sub-menu index="/cloudserver">
             <template #title>
               <i class="el-icon-cloud"></i><span>Cloud</span>
             </template>
             <el-menu-item index="/cloudserver/workbench1"
               >工作台</el-menu-item
             >
+            <!-- <el-menu-item index="/cloudserver/logs"
+              >日志记录</el-menu-item
+            > -->
           </el-sub-menu>
+          <el-menu-item index="/federated-learning"
+            ><i class="el-icon-s-data"></i><span>联邦学习</span></el-menu-item
+          >
+          <el-menu-item index="/homomorphic-encryption"
+            ><i class="el-icon-lock"></i><span>同态加密</span></el-menu-item
+          >
         </el-menu>
       </aside>
 
@@ -67,16 +150,62 @@
 </template>
 
 <script>
-import { defineComponent } from 'vue'
+import { defineComponent, computed } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 export default defineComponent({
   name: 'App',
-  methods: {
-    handleOpen(key, keyPath) {
-      console.log(key, keyPath)
-    },
-    handleClose(key, keyPath) {
-      console.log(key, keyPath)
+  setup() {
+    const store = useStore()
+    const router = useRouter()
+    
+    // 从store中获取登录状态和用户信息
+    const isLoggedIn = computed(() => store.state.auth.isLoggedIn)
+    const userInfo = computed(() => store.state.auth.userInfo)
+    // 从clients模块获取客户端列表
+    const clients = computed(() => store.getters['clients/getAllClients'])
+    // 从edgeServer模块获取EdgeServer列表
+    const edgeServers = computed(() => store.getters['edgeServer/getAllServers'])
+    
+    // 处理下拉菜单命令
+    const handleDropdownCommand = async (command) => {
+      if (command === 'logout') {
+        // 执行退出登录
+        await store.dispatch('auth/logout')
+        router.push('/mfa/login')
+        ElMessage.success('已成功退出登录')
+      } else if (command === 'userInfo') {
+        // 跳转到用户信息页面
+        router.push('/mfa/userInfo')
+      }
+    }
+    
+    // 初始化时检查认证状态
+    const initAuth = async () => {
+      try {
+        await store.dispatch('auth/checkAuth')
+      } catch (error) {
+        console.error('检查认证状态失败:', error)
+      }
+    }
+    
+    // 组件挂载时初始化认证状态
+    initAuth()
+    
+    return {
+      isLoggedIn,
+      userInfo,
+      clients,
+      edgeServers,
+      handleDropdownCommand,
+      handleOpen(key, keyPath) {
+        console.log(key, keyPath)
+      },
+      handleClose(key, keyPath) {
+        console.log(key, keyPath)
+      }
     }
   }
 })
@@ -89,20 +218,43 @@ export default defineComponent({
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  background-color: var(--bg-primary);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0 var(--spacing-lg);
+}
+
+.user-avatar-container {
+  position: relative;
+}
+
+.avatar-wrapper {
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.avatar-wrapper:hover {
+  transform: scale(1.05);
 }
 
 .header {
   height: 64px;
-  background-color: #2c3e50;
-  color: white;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  font-weight: bold;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  font-size: var(--font-xl);
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
   position: relative;
   overflow: hidden;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .header::before {
@@ -111,27 +263,28 @@ export default defineComponent({
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, #3498db, #2ecc71);
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-light), var(--success-color));
 }
 
 .header-content {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: var(--spacing-md);
 }
 
 .logo-container {
   width: 40px;
   height: 40px;
-  background-color: white;
+  background-color: var(--primary-light);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2c3e50;
+  color: var(--text-light);
   font-size: 24px;
+  box-shadow: var(--shadow-sm);
 }
 
 .main-content {
@@ -141,22 +294,50 @@ export default defineComponent({
 }
 
 .sidebar {
-  width: 220px;
-  background-color: #f0f9eb;
-  box-shadow: 1px 0 10px rgba(0, 0, 0, 0.05);
+  width: 240px;
+  background-color: var(--bg-tertiary);
+  box-shadow: var(--shadow-sm);
   overflow-y: auto;
+  border-right: 1px solid var(--border-color);
+  transition: all var(--transition-base);
 }
 
 .content {
   flex: 1;
-  padding: 20px;
+  padding: var(--spacing-lg);
   overflow-y: auto;
-  background-color: #f7f7f7;
+  background-color: var(--bg-primary);
+  transition: all var(--transition-base);
+}
+
+/* 页面过渡动画 */
+.router-view {
+  transition: all var(--transition-base);
 }
 
 /* 自定义ElementUI样式 */
 .el-menu-vertical-demo:not(.el-menu--collapse) {
-  width: 220px;
+  width: 240px;
   min-height: 400px;
+  background-color: transparent !important;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+  }
+  
+  .el-menu-vertical-demo:not(.el-menu--collapse) {
+    width: 200px;
+  }
+  
+  .content {
+    padding: var(--spacing-md);
+  }
+  
+  .header {
+    font-size: var(--font-lg);
+  }
 }
 </style>

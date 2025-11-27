@@ -34,3 +34,36 @@ npm run dev
 - `index.html`: 入口HTML文件
 - `package.json`: 项目配置
 - `vite.config.js`: Vite配置文件
+- `api-gateway/`: API网关服务
+
+## API网关服务
+项目包含一个独立的API网关服务，用于管理EdgeServer-Client的配置和操作。
+
+### 如何运行API网关服务
+1. 进入API网关目录
+```bash
+cd api-gateway
+```
+2. 安装依赖
+```bash
+npm install
+```
+3. 运行API网关服务
+```bash
+npm start
+# 或开发模式（支持自动重启）
+npm run dev
+```
+
+### API文档
+API网关服务集成了Swagger UI，可以通过以下地址访问完整的API文档：
+http://localhost:4000/api-docs
+
+### 主要功能
+- 获取和更新EdgeServer-Client的配置文件
+- 获取注册配置文件
+- 执行DEBEClient命令
+- 获取和下载可访问的文件
+
+### 前端访问方式
+前端项目已配置代理，可以通过`/api-gateway`前缀访问API网关服务，也可以直接导入`src/api/request.js`中的`apiGateway`实例来调用API。
