@@ -1,7 +1,8 @@
 export default {
   namespaced: true,
   state: {
-    clients: [] // 存储客户端列表数据
+    clients: [], // 存储客户端列表数据
+    clientEdgeConnections: {} // 格式: { clientId: edgeServerIp }
   },
   mutations: {
     // 设置客户端列表
@@ -26,6 +27,14 @@ export default {
     // 清空客户端列表
     CLEAR_CLIENTS(state) {
       state.clients = [];
+    },
+    // 设置客户端与EdgeServer的连接关系
+    SET_CLIENT_EDGE_CONNECTION(state, { clientId, edgeServerIp }) {
+      state.clientEdgeConnections[clientId] = edgeServerIp;
+    },
+    // 清除客户端与EdgeServer的连接关系
+    CLEAR_CLIENT_EDGE_CONNECTION(state, clientId) {
+      delete state.clientEdgeConnections[clientId];
     }
   },
   actions: {
@@ -44,12 +53,24 @@ export default {
     // 清空客户端列表
     clearClients({ commit }) {
       commit('CLEAR_CLIENTS');
+    },
+    // 设置客户端与EdgeServer的连接关系
+    setClientEdgeConnection({ commit }, data) {
+      commit('SET_CLIENT_EDGE_CONNECTION', data);
+    },
+    // 清除客户端与EdgeServer的连接关系
+    clearClientEdgeConnection({ commit }, clientId) {
+      commit('CLEAR_CLIENT_EDGE_CONNECTION', clientId);
     }
   },
   getters: {
     // 获取所有客户端列表
     getAllClients: state => state.clients,
     // 根据客户端ID获取客户端
-    getClientById: state => clientId => state.clients.find(client => client.name === clientId)
+    getClientById: state => clientId => state.clients.find(client => client.name === clientId),
+    // 获取客户端与EdgeServer的连接关系
+    getClientEdgeConnections: state => state.clientEdgeConnections,
+    // 获取指定客户端连接的EdgeServer IP
+    getClientEdgeConnection: state => clientId => state.clientEdgeConnections[clientId] || null
   }
 };

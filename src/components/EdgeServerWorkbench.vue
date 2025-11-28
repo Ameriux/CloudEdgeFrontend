@@ -188,8 +188,8 @@
             <el-table-column prop="backupMethod" label="备份方式" min-width="120"></el-table-column>
             <el-table-column label="操作" min-width="150" fixed="right">
               <template #default="scope">
-                <el-button type="primary" text @click="openEditBackupNodeDialog(scope.row)">编辑</el-button>
-                <el-button type="danger" text @click="removeBackupNode(scope.row.name)">移除</el-button>
+                <el-button type="primary" text @click="openEditBackupNodeDialog(scope.row)" style="color: white;">编辑</el-button>
+                <el-button type="danger" text @click="removeBackupNode(scope.row.name)" style="color: white;">移除</el-button>
               </template>
             </el-table-column>
           </el-table>

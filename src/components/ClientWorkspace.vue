@@ -67,6 +67,14 @@ export default defineComponent({
         const selectedServer = edgeServers.value.find(server => server.ipAddress === value)
         if (selectedServer) {
           store.commit('edgeServer/SET_CURRENT_SERVER', selectedServer)
+          // 设置客户端与EdgeServer的连接关系
+          store.dispatch('clients/setClientEdgeConnection', {
+            clientId: props.clientId,
+            edgeServerIp: value
+          })
+        } else if (value === '') {
+          // 清除连接关系
+          store.dispatch('clients/clearClientEdgeConnection', props.clientId)
         }
       }
     }

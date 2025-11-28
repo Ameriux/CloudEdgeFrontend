@@ -16,11 +16,13 @@ import Download from '../views/DEBEClient/Download/index.vue'
 import EdgeServer from '../views/EdgeServer/index.vue'
 import EdgeWorkbench1 from '../views/EdgeServer/Workbench1/index.vue'
 import EdgeWorkspace from '../views/EdgeServer/Workspace/index.vue'
+import HomomorphicEncryptionTransfer from '../views/EdgeServer/HomomorphicEncryptionTransfer/index.vue'
 import CloudServer from '../views/CloudServer/index.vue'
 import CloudWorkbench1 from '../views/CloudServer/Workbench1/index.vue'
 import CloudLogRecord from '../views/CloudServer/LogRecord/index.vue'
+import HomomorphicEncryptionAnalysis from '../views/CloudServer/HomomorphicEncryptionAnalysis/index.vue'
 import FederatedLearning from '../views/FederatedLearning/index.vue'
-import HomomorphicEncryption from '../views/同态加密/index.vue'
+// import HomomorphicEncryption from '../views/同态加密/index.vue'
 
 const routes = [
   {
@@ -156,9 +158,14 @@ const routes = [
     component: FederatedLearning
   },
   {
-    path: '/homomorphic-encryption',
-    name: 'homomorphic-encryption',
-    component: HomomorphicEncryption
+    path: '/edgeserver/homomorphic-encryption-transfer',
+    name: 'edge-homomorphic-encryption-transfer',
+    component: HomomorphicEncryptionTransfer
+  },
+  {
+    path: '/cloudserver/homomorphic-encryption-analysis',
+    name: 'cloud-homomorphic-encryption-analysis',
+    component: HomomorphicEncryptionAnalysis
   }
 ]
 

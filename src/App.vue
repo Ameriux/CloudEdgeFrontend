@@ -120,6 +120,9 @@
                 {{ server.deviceName }}
               </el-menu-item>
             </el-sub-menu>
+            <el-menu-item index="/edgeserver/homomorphic-encryption-transfer"
+              >同态加密-加密传输</el-menu-item
+            >
           </el-sub-menu>
           <el-sub-menu index="/cloudserver">
             <template #title>
@@ -131,12 +134,12 @@
             <!-- <el-menu-item index="/cloudserver/logs"
               >日志记录</el-menu-item
             > -->
+            <el-menu-item index="/cloudserver/homomorphic-encryption-analysis"
+              >同态加密-密文数据分析</el-menu-item
+            >
           </el-sub-menu>
           <el-menu-item index="/federated-learning"
             ><i class="el-icon-s-data"></i><span>联邦学习</span></el-menu-item
-          >
-          <el-menu-item index="/homomorphic-encryption"
-            ><i class="el-icon-lock"></i><span>同态加密</span></el-menu-item
           >
         </el-menu>
       </aside>

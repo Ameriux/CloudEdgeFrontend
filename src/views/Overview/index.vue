@@ -122,53 +122,192 @@ export default defineComponent({
       
       // 定义节点数据
       const nodes = []
-      // 添加固定的EdgeServer和Cloud节点
-      nodes.push({ id: 'edge1', name: 'EdgeServer1', group: 2, x: actualWidth / 2, y: 250 })
+      // 添加Cloud节点
       nodes.push({ id: 'cloud1', name: 'Cloud1', group: 3, x: actualWidth / 2, y: 400 })
+      
+      // 从store获取EdgeServer列表
+      const edgeServerList = store.getters['edgeServer/getAllServers'] || []
+      
+      // 动态添加EdgeServer节点
+      const edgeCount = edgeServerList.length
+      const edgeStartX = actualWidth / 2 - (edgeCount - 1) * nodeDistance / 2
+      
+      edgeServerList.forEach((server, index) => {
+        nodes.push({
+          id: `edge-${server.id}`,
+          name: server.deviceName,
+          group: 2,
+          x: edgeStartX + index * nodeDistance,
+          y: 250
+        })
+      })
       
       // 动态添加客户端节点
       const clientCount = clientList.length
-      const startX = actualWidth / 2 - (clientCount - 1) * nodeDistance / 2
+      const clientStartX = actualWidth / 2 - (clientCount - 1) * nodeDistance / 2
       
       clientList.forEach((client, index) => {
         nodes.push({
           id: `client-${client.name}`,
           name: `client: ${client.name}`,
           group: 1,
-          x: startX + index * nodeDistance,
+          x: clientStartX + index * nodeDistance,
           y: 100
         })
       })
 
       // 定义链接数据
       const links = []
-      // 所有客户端连接到EdgeServer
+      // 获取客户端与EdgeServer的连接关系
+      const clientEdgeConnections = store.getters['clients/getClientEdgeConnections'] || {}
+      
+      // 根据连接关系为客户端添加到EdgeServer的链接
       clientList.forEach(client => {
-        links.push({ source: `client-${client.name}`, target: 'edge1' })
+        const connectedEdgeIp = clientEdgeConnections[client.name]
+        if (connectedEdgeIp) {
+          // 查找对应的EdgeServer
+          const connectedEdge = edgeServerList.find(server => server.ipAddress === connectedEdgeIp)
+          if (connectedEdge) {
+            links.push({ 
+              source: `client-${client.name}`, 
+              target: `edge-${connectedEdge.id}`
+            })
+          }
+        }
       })
-      // EdgeServer连接到Cloud
-      links.push({ source: 'edge1', target: 'cloud1' })
+      
+      // 每个EdgeServer连接到Cloud
+      edgeServerList.forEach((server, index) => {
+        links.push({ source: `edge-${server.id}`, target: 'cloud1' })
+      })
+      
+      // 添加EdgeServer之间的备份关系连线
+      edgeServerList.forEach(server => {
+        if (server.backupNodes && server.backupNodes.length > 0) {
+          server.backupNodes.forEach(backupNode => {
+            // 查找备份节点对应的EdgeServer
+            const targetServer = edgeServerList.find(s => s.deviceName === backupNode.deviceName)
+            if (targetServer) {
+              links.push({
+                source: `edge-${server.id}`,
+                target: `edge-${targetServer.id}`,
+                type: 'backup', // 标记为备份关系线
+                label: '备份至'
+              })
+            }
+          })
+        }
+      })
 
-      // 创建力导向图
+      // 创建力导向图，优化布局效果
       const simulation = d3.forceSimulation(nodes)
         .force('link', d3.forceLink(links).id(d => d.id).distance(nodeDistance))
         .force('charge', d3.forceManyBody().strength(-2000))
         .force('center', d3.forceCenter(actualWidth / 2, actualHeight / 2))
+        .force('collision', d3.forceCollide().radius(nodeRadius * 1.5))
         // 保持节点在指定的y轴位置附近
         .force('y', d3.forceY(d => {
           if (d.group === 1) return 100
           if (d.group === 2) return 250
           return 400
         }).strength(1))
+        .alphaDecay(0.02) // 减缓收敛速度，使布局更稳定
+        .velocityDecay(0.4) // 控制速度衰减
 
+      // 创建箭头标记定义
+      const defs = svg.append('defs')
+      
+      // 普通箭头
+      defs.append('marker')
+        .attr('id', 'arrowhead')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 9) // 调整箭头位置
+        .attr('refY', 0)
+        .attr('markerWidth', 6)
+        .attr('markerHeight', 6)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', '#999')
+      
+      // 备份关系箭头
+      defs.append('marker')
+        .attr('id', 'backup-arrow')
+        .attr('viewBox', '0 -5 10 10')
+        .attr('refX', 9)
+        .attr('refY', 0)
+        .attr('markerWidth', 8)
+        .attr('markerHeight', 8)
+        .attr('orient', 'auto')
+        .append('path')
+        .attr('d', 'M0,-5L10,0L0,5')
+        .attr('fill', '#ff6b6b')
+      
       // 绘制链接
       const link = svg.append('g')
         .selectAll('line')
         .data(links)
-        .enter()
-        .append('line')
-        .attr('stroke', '#999')
-        .attr('stroke-width', 2)
+        .join('line')
+        .attr('stroke-width', d => Math.sqrt(d.value || 1))
+        .attr('stroke', d => d.type === 'backup' ? '#ff6b6b' : '#999') // 备份关系线使用红色
+        .attr('stroke-opacity', d => d.type === 'backup' ? 0.8 : 0.6)
+        .attr('stroke-dasharray', d => d.type === 'backup' ? '5,5' : 'none') // 备份线使用虚线
+        .attr('marker-end', d => d.type === 'backup' ? 'url(#backup-arrow)' : 'url(#arrowhead)')
+        .style('transition', 'stroke-opacity 0.3s ease-in-out')
+        
+      // 为备份关系线添加传输动画效果
+      const backupLinks = link.filter(d => d.type === 'backup')
+      
+      // 为每条备份线创建动画效果
+      backupLinks.each(function(d) {
+        const line = d3.select(this)
+        
+        // 创建传输点
+        const marker = line.node().parentNode.appendChild(
+          document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+        )
+        const markerCircle = d3.select(marker)
+          .attr('r', 4)
+          .attr('fill', '#fff')
+          .attr('stroke', '#ff6b6b')
+          .attr('stroke-width', 2)
+          .style('pointer-events', 'none')
+        
+        // 定义动画函数
+        function animateMarker() {
+          const x1 = d.source.x
+          const y1 = d.source.y
+          const x2 = d.target.x
+          const y2 = d.target.y
+          
+          markerCircle
+            .transition()
+            .duration(3000)
+            .attrTween('cx', function() {
+              return function(t) { return x1 + (x2 - x1) * t }
+            })
+            .attrTween('cy', function() {
+              return function(t) { return y1 + (y2 - y1) * t }
+            })
+            .ease(d3.easeLinear)
+            .on('end', animateMarker)
+        }
+        
+        // 开始动画
+        animateMarker()
+      })
+      
+      // 为备份关系线添加文字标签
+      const linkLabels = svg.append('g')
+        .selectAll('text')
+        .data(links.filter(d => d.type === 'backup'))
+        .join('text')
+        .attr('class', 'link-label')
+        .text(d => d.label)
+        .attr('font-size', 12)
+        .attr('fill', '#ff6b6b')
+        .attr('text-anchor', 'middle')
+        .attr('dy', '-5') // 文字位置向上偏移
 
       // 绘制节点组
       const node = svg.append('g')
@@ -181,6 +320,36 @@ export default defineComponent({
           .on('drag', dragged)
           .on('end', dragended)
         )
+        .on('mouseover', function(event, d) {
+          // 悬停效果 - 放大节点
+          d3.select(this).select('image')
+            .transition()
+            .duration(200)
+            .attr('x', -nodeRadius * 1.1)
+            .attr('y', -nodeRadius * 1.1)
+            .attr('width', nodeRadius * 2.2)
+            .attr('height', nodeRadius * 2.2)
+          
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .attr('filter', 'drop-shadow(0 6px 8px rgba(0, 0, 0, 0.2))')
+        })
+        .on('mouseout', function(event, d) {
+          // 恢复默认大小
+          d3.select(this).select('image')
+            .transition()
+            .duration(200)
+            .attr('x', -nodeRadius)
+            .attr('y', -nodeRadius)
+            .attr('width', nodeRadius * 2)
+            .attr('height', nodeRadius * 2)
+          
+          d3.select(this)
+            .transition()
+            .duration(200)
+            .attr('filter', '')
+        })
 
       // 绘制节点图片
       node.append('image')
@@ -193,6 +362,7 @@ export default defineComponent({
           if (d.group === 2) return '/src/assets/服务器.png'
           return '/src/assets/云服务器.png'
         })
+        .attr('pointer-events', 'none')
 
       // 绘制节点标签
       node.append('text')
@@ -200,6 +370,7 @@ export default defineComponent({
         .attr('text-anchor', 'middle')
         .attr('fill', '#333')
         .attr('font-size', Math.max(nodeRadius / 3, 10))
+        .attr('pointer-events', 'none')
         .text(d => d.name)
 
       // 节点点击事件
@@ -207,7 +378,7 @@ export default defineComponent({
         showNodeInfo(d)
       })
 
-      // 更新力导向图
+      // 更新链接和节点位置的动画
       simulation.on('tick', () => {
         link
           .attr('x1', d => d.source.x)
@@ -215,7 +386,12 @@ export default defineComponent({
           .attr('x2', d => d.target.x)
           .attr('y2', d => d.target.y)
 
-        node.attr('transform', d => `translate(${d.x},${d.y})`)
+        node.attr('transform', d => `translate(${d.x}, ${d.y})`)
+        
+        // 更新链接标签位置
+        linkLabels
+          .attr('x', d => (d.source.x + d.target.x) / 2)
+          .attr('y', d => (d.source.y + d.target.y) / 2)
       })
 
       // 拖拽函数
