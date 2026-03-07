@@ -12,14 +12,6 @@
 
       <!-- 基础数据展示视图 -->
       <div v-if="viewMode === '基础数据展示'">
-        <div class="command-input">
-          <el-input
-            v-model="command"
-            placeholder="请输入指令"
-            style="width: 80%"
-          ></el-input>
-          <el-button type="primary" @click="executeCommand">执行</el-button>
-        </div>
 
         <div style="margin: 10px 0;">
           <el-button type="success" size="small" @click="fetchUploadData" :loading="isLoading" :disabled="isLoading">更新上传数据</el-button>
@@ -33,36 +25,28 @@
               <el-statistic
                 v-model:value="lastEncryptionDelay"
                 title="文件加密延迟"
-                suffix="us"
+                suffix="ms/MiB"
               />
             </el-col>
-            
-            <!-- <el-col :span="6">
-              <el-statistic
-                v-model:value="totalEncryptionDelay"
-                title="累计加密延迟"
-                suffix="us"
-              />
-            </el-col> -->
             <el-col :span="6">
               <el-statistic
                 v-model:value="encryptedSize"
                 title="加密后逻辑数据大小"
-                suffix="B"
+                suffix="MB"
               />
             </el-col>
             <el-col :span="6">
               <el-statistic
                 v-model:value="uniqueDataSize"
                 title="去重后数据大小"
-                suffix="B"
+                suffix="MB"
               />
             </el-col>
             <el-col :span="6">
               <el-statistic
                 v-model:value="dedupSize"
                 title="去重数据量"
-                suffix="B"
+                suffix="MB"
               />
             </el-col>
           </el-row>
@@ -71,33 +55,32 @@
               <el-statistic
                 v-model:value="metaEncryptionDelay"
                 title="元数据加密延迟"
-                suffix="us"
+                suffix="ms"
               />
             </el-col>
             <el-col :span="6">
               <el-statistic
                 v-model:value="reductionTime"
                 title="数据压缩时间"
-                suffix="us"
+                suffix="ms"
               />
             </el-col>
             <el-col :span="6">
               <el-statistic
                 v-model:value="reducedSize"
                 title="压缩后数据大小"
-                suffix="B"
+                suffix="MB"
               />
             </el-col>
           </el-row>
-
 
           <h3 style="margin-top: 20px;">数据展示（下载）</h3>
           <el-row :gutter="20">
             <el-col :span="6">
               <el-statistic
                 v-model:value="lastDecryptionDelay"
-                title="本次解密延迟"
-                suffix="us"
+                title="文件解密延迟"
+                suffix="ms/MiB"
               />
 
             </el-col>
@@ -105,21 +88,24 @@
               <el-statistic
                 v-model:value="metaDecryptionDelay"
                 title="元数据解密延迟"
-                suffix="us"
-              />
-            </el-col>
-            <el-col :span="6">
-              <el-statistic
-                v-model:value="cloudReadTime"
-                title="从云端读取时间"
-                suffix="us"
+                suffix="ms"
               />
             </el-col>
           </el-row>
         </div>
 
+        <div class="metrics-display">
+          <h3>存储开销占比</h3>
+          <h4>计算逻辑：(Containers 大小 + Recipes 大小 - 所有已上传文件总大小) / 所有已上传文件总大小</h4>
+          <el-statistic
+            :value = "storageUsage ? (storageUsage * 100).toFixed(4) : 0"
+            title="存储开销占比"
+            suffix="%"
+          />
+        </div>
+
         <div class="container-form">
-          <h3>Container 数据 （存储开销占 {{ containerStorageUsage }}%）</h3>
+          <h3>Container 数据 </h3>
           <el-table :data="containerData" style="width: 100%">
             <el-table-column prop="name" label="名称" min-width="150"></el-table-column>
             <el-table-column prop="size" label="大小 (B)" min-width="120"></el-table-column>
@@ -133,7 +119,7 @@
         </div>
 
         <div class="file-recipe-form">
-          <h3>File Recipe 数据 （存储开销占 {{ recipeStorageUsage }}%）</h3>
+          <h3>File Recipe 数据 </h3>
           <el-table :data="fileRecipeData" style="width: 100%">
             <el-table-column prop="name" label="名称" min-width="150"></el-table-column>
             <el-table-column prop="size" label="大小 (B)" min-width="120"></el-table-column>
@@ -216,9 +202,9 @@
                     <el-row :gutter="20">
                       <el-col :span="12">
                         <el-statistic
-                          :value="featureSyncRecords[0]?.traffic || 0"
+                          :value="(featureSyncRecords[0]?.traffic / 1024 / 1024).toFixed(2) || 0"
                           title="同步流量"
-                          :suffix="featureSyncRecords[0]?.trafficUnit || 'B'"
+                          :suffix="'MB'"
                         />
                       </el-col>
                       <el-col :span="12">
@@ -231,6 +217,26 @@
                       </el-col>
                     </el-row>
                   </div>
+               <h4>与 Rsync 相比</h4>
+                <!-- 数据展示框 -->
+                <div class="metrics-display">
+                  <el-row :gutter="20">
+                    <el-col :span="12">
+                      <el-statistic
+                        :value="((rsyncRecords[0]?.traffic - featureSyncRecords[0]?.traffic) / rsyncRecords[0]?.traffic * 100).toFixed(2) || 0"
+                        title="同步流量减少"
+                        :suffix="'%'"
+                      />
+                    </el-col>
+                    <el-col :span="12">
+                      <el-statistic
+                        :value="((rsyncRecords[0]?.time - featureSyncRecords[0]?.time) / rsyncRecords[0]?.time * 100).toFixed(2) || 0"
+                        title="同步时间减少"
+                        :suffix="'%'"
+                      />
+                    </el-col>
+                   </el-row>
+                 </div>
                   <div class="sync-status" style="margin-top: 20px; text-align: center;">
                     <p v-if="featureSyncRecords[0]">
                       {{ formatTimestamp(featureSyncRecords[0].timestamp) }} - 同步到 {{ featureSyncRecords[0].target }}
@@ -261,9 +267,9 @@
                     <el-row :gutter="20">
                       <el-col :span="12">
                         <el-statistic
-                          :value="featureSyncRecords[1]?.traffic || 0"
+                          :value="(featureSyncRecords[1]?.traffic / 1024 / 1024).toFixed(2) || 0"
                           title="同步流量"
-                          :suffix="featureSyncRecords[1]?.trafficUnit || 'B'"
+                          :suffix="'MB'"
                         />
                       </el-col>
                       <el-col :span="12">
@@ -299,9 +305,9 @@
                     <el-row :gutter="20">
                       <el-col :span="12">
                         <el-statistic
-                          :value="rsyncRecords[0]?.traffic || 0"
+                          :value="(rsyncRecords[0]?.traffic / 1024 / 1024).toFixed(2) || 0"
                           title="同步流量"
-                          :suffix="rsyncRecords[0]?.trafficUnit || 'B'"
+                          :suffix="'MB'"
                         />
                       </el-col>
                       <el-col :span="12">
@@ -344,9 +350,9 @@
                     <el-row :gutter="20">
                       <el-col :span="12">
                         <el-statistic
-                          :value="rsyncRecords[1]?.traffic || 0"
+                          :value="(rsyncRecords[1]?.traffic / 1024 / 1024).toFixed(2) || 0"
                           title="同步流量"
-                          :suffix="rsyncRecords[1]?.trafficUnit || 'B'"
+                          :suffix="'MB'"
                         />
                       </el-col>
                       <el-col :span="12">
@@ -372,7 +378,7 @@
         </div>
 
         <!-- 备份文件展示列表 -->
-        <div class="backup-files-section">
+        <div class="backup-files-section" v-if="backupFileTitle">
           <div class="section-header">
             <h3>{{ backupFileTitle }}</h3>
           </div>
@@ -393,7 +399,7 @@
 
         <!-- Container 数据 -->
         <div class="container-form" v-if="shouldDisplayContainersAndRecipes">
-          <h3>Container 数据（包含备份同步文件）</h3>
+          <h3>Container 数据</h3>
           <el-table :data="containerData" style="width: 100%">
             <el-table-column prop="name" label="名称" min-width="150"></el-table-column>
             <el-table-column prop="size" label="大小 (B)" min-width="120"></el-table-column>
@@ -408,7 +414,7 @@
 
         <!-- File Recipe 数据 -->
         <div class="file-recipe-form" v-if="shouldDisplayContainersAndRecipes">
-          <h3>File Recipe 数据（包含备份同步文件）</h3>
+          <h3>File Recipe 数据</h3>
           <el-table :data="fileRecipeData" style="width: 100%">
             <el-table-column prop="name" label="名称" min-width="150"></el-table-column>
             <el-table-column prop="size" label="大小 (B)" min-width="120"></el-table-column>
@@ -701,70 +707,30 @@ export default defineComponent({
     const backupFileTitle = ref('备份文件列表')
     
     // 存储开销相关变量
-    const containerStorageUsage = ref() // Container存储开销占比，默认5%
-    const recipeStorageUsage = ref() // Recipe存储开销占比，默认5%
-    
-    // 获取Container存储开销
-    const fetchContainerStorageUsage = async () => {
-      try {
-        console.log('正在获取Container存储开销数据...')
+    const storageUsage = ref()
+    const fetchStorageUsage = async () => {
+      try{
+        console.log('正在获取存储开销数据...')
         const response = await fetch('/api-internal/meta/data')
         const data = await response.json()
-        
-        console.log('存储开销API返回数据:', data)
-        
-        if (data.status === 'success' && data.container) {
-          const { meta_size, total_size } = data.container
-          // 计算比率并保留两位小数
-          if (total_size > 0) {
-            const ratio = (meta_size / total_size) * 100
-            containerStorageUsage.value = Number(ratio.toFixed(2))
-            console.log(`Container存储开销计算完成: ${containerStorageUsage.value}%`)
-          } else {
-            console.log('Container总大小为0，使用默认值5%')
-            containerStorageUsage.value = 5
-          }
-        } else {
-          console.log('获取Container存储开销数据失败，使用默认值5%')
-          containerStorageUsage.value = 5
+
+        console.log('获取到的原始数据:', data)
+        if (data.status === 'success' && data.total.rate) {
+          storageUsage.value = data.total.rate
+          console.log(`获取到的存储开销值: ${storageUsage.value}`)
+          return storageUsage.value
         }
-        return containerStorageUsage.value
-      } catch (error) {
-        console.error('获取Container存储开销时出错:', error.message)
-        containerStorageUsage.value = 5
-        return containerStorageUsage.value
+        // 如果没有获取到有效的rate值，使用默认值0
+        storageUsage.value = 0
+        return storageUsage.value
+      }catch (error) {
+        console.error('获取存储开销时出错:', error.message)
+        storageUsage.value = 0
+        return storageUsage.value
       }
     }
+
     
-    // 获取Recipe存储开销
-    const fetchRecipeStorageUsage = async () => {
-      try {
-        console.log('正在获取Recipe存储开销数据...')
-        const response = await fetch('/api-internal/meta/data')
-        const data = await response.json()
-        
-        if (data.status === 'success' && data.recipe) {
-          const { meta_size, total_size } = data.recipe
-          // 计算比率并保留两位小数
-          if (total_size > 0) {
-            const ratio = (meta_size / total_size) * 100
-            recipeStorageUsage.value = Number(ratio.toFixed(2))
-            console.log(`Recipe存储开销计算完成: ${recipeStorageUsage.value}%`)
-          } else {
-            console.log('Recipe总大小为0，使用默认值5%')
-            recipeStorageUsage.value = 5
-          }
-        } else {
-          console.log('获取Recipe存储开销数据失败，使用默认值5%')
-          recipeStorageUsage.value = 5
-        }
-        return recipeStorageUsage.value
-      } catch (error) {
-        console.error('获取Recipe存储开销时出错:', error.message)
-        recipeStorageUsage.value = 5
-        return recipeStorageUsage.value
-      }
-    }
     
     // 格式化文件大小
     const formatFileSize = (bytes) => {
@@ -777,9 +743,16 @@ export default defineComponent({
     
     // 动态获取备份文件列表
     const fetchBackupFileList = async () => {
+      // node2不显示备份文件列表
+      if (currentServer.value.ipAddress === '192.168.104.8') {
+        backupFiles.value = [];
+        backupFileTitle.value = '';
+        return;
+      }
+      
       let apiUrl = '/api-internal/node2/syn/info';
       let params = { ip: '192.168.104.8' };
-      let backupTitle = ' bin目录备份文件列表';
+      let backupTitle = '源 192.168.104.8 的备份文件';
 
       if (currentServer.value.ipAddress === '192.168.104.4' || currentServer.value.ipAddress === '192.168.104.5') {
         apiUrl = '/api-internal/other/syn/info';
@@ -1159,16 +1132,16 @@ export default defineComponent({
 
     // 从Vuex获取数据
     const lastEncryptionDelay = computed(() => store.state.edgeServer.lastEncryptionDelay)
-    const totalEncryptionDelay = computed(() => store.state.edgeServer.totalEncryptionDelay)
-    const metaEncryptionDelay = computed(() => store.state.edgeServer.metaEncryptionDelay)
-    const encryptedSize = computed(() => store.state.edgeServer.encryptedSize)
-    const reductionTime = computed(() => store.state.edgeServer.reductionTime)
-    const reducedSize = computed(() => store.state.edgeServer.reducedSize)
-    const dedupSize = computed(() => store.state.edgeServer.dedupSize)
-    const uniqueDataSize = computed(() => store.state.edgeServer.uniqueDataSize)
+const totalEncryptionDelay = computed(() => store.state.edgeServer.totalEncryptionDelay / 1000)
+const metaEncryptionDelay = computed(() => store.state.edgeServer.metaEncryptionDelay / 1000)
+    const encryptedSize = computed(() => store.state.edgeServer.encryptedSize / 1024 / 1024)
+    const reductionTime = computed(() => store.state.edgeServer.reductionTime / 1000)
+    const reducedSize = computed(() => store.state.edgeServer.reducedSize / 1024 / 1024)
+    const dedupSize = computed(() => store.state.edgeServer.dedupSize / 1024 / 1024)
+    const uniqueDataSize = computed(() => store.state.edgeServer.uniqueDataSize / 1024 / 1024)
     const lastDecryptionDelay = computed(() => store.state.edgeServer.lastDecryptionDelay)
-    const totalDecryptionDelay = computed(() => store.state.edgeServer.totalDecryptionDelay)
-    const metaDecryptionDelay = computed(() => store.state.edgeServer.metaDecryptionDelay)
+const totalDecryptionDelay = computed(() => store.state.edgeServer.totalDecryptionDelay / 1000)
+const metaDecryptionDelay = computed(() => store.state.edgeServer.metaDecryptionDelay / 1000)
     const cloudReadTime = computed(() => store.state.edgeServer.cloudReadTime)
     // 过滤函数：排除特定后缀的文件（-enc, .enc, -enc-result）
 const filterExcludedSuffixes = (files) => {
@@ -1382,8 +1355,7 @@ const fileRecipeData = computed(() => filterExcludedSuffixes(store.state.edgeSer
         fetchEncryptionInfo(),
         fetchContainerInfo(),
         fetchFileRecipeInfo(),
-        fetchContainerStorageUsage(),
-        fetchRecipeStorageUsage()
+        fetchStorageUsage(),
       ])
         .then(results => {
           const containerInfo = results[1];
@@ -1443,8 +1415,7 @@ const fileRecipeData = computed(() => filterExcludedSuffixes(store.state.edgeSer
         fetchDecryptionInfo(),
         fetchContainerInfo(),
         fetchFileRecipeInfo(),
-        fetchContainerStorageUsage(),
-        fetchRecipeStorageUsage()
+        fetchStorageUsage(),
       ])
         .then(results => {
           const containerInfo = results[1];
@@ -1522,13 +1493,13 @@ const fileRecipeData = computed(() => filterExcludedSuffixes(store.state.edgeSer
 
           // 额外添加数据更新日志到控制台（直接从store获取数据）
           console.log('\n===== 数据更新状态 =====');
-          console.log('加密延迟(本次):', store.state.edgeServer.lastEncryptionDelay, 'us');
+          console.log('加密延迟(本次):', store.state.edgeServer.lastEncryptionDelay, 'ms/MiB');
           console.log('元数据加密延迟(本次):', store.state.edgeServer.metaEncryptionDelay, 'us');
           console.log('加密后数据大小(本次):', store.state.edgeServer.encryptedSize, 'B');
           console.log('数据冗余缩减时间(本次):', store.state.edgeServer.reductionTime, 'us');
           console.log('冗余缩减后数据大小(本次):', store.state.edgeServer.reducedSize, 'B');
           console.log('去重数据量(本次):', store.state.edgeServer.dedupSize, 'B');
-          console.log('解密延迟(本次):', store.state.edgeServer.lastDecryptionDelay, 'us');
+          console.log('解密延迟(本次):', store.state.edgeServer.lastDecryptionDelay, 'ms/MiB');
           console.log('元数据解密延迟(本次):', store.state.edgeServer.metaDecryptionDelay, 'us');
           console.log('从云端读取时间:', store.state.edgeServer.cloudReadTime, 'us');
           console.log('容器数据数量:', containerInfo.length, '条');
@@ -1628,6 +1599,7 @@ const fileRecipeData = computed(() => filterExcludedSuffixes(store.state.edgeSer
       setTimeout(() => {
         fetchFileList('featureSync');
         fetchFileList('rsync');
+        fetchStorageUsage();
         // 初始化备份文件列表
         fetchBackupFileList();
         
@@ -1638,8 +1610,7 @@ const fileRecipeData = computed(() => filterExcludedSuffixes(store.state.edgeSer
           fetchContainerInfo().catch(console.error);
           fetchFileRecipeInfo().catch(console.error);
           // 初始化获取存储开销占比
-          fetchContainerStorageUsage().catch(console.error);
-          fetchRecipeStorageUsage().catch(console.error);
+          fetchStorageUsage().catch(console.error);
         }
       }, 100);
 
@@ -1651,8 +1622,7 @@ const fileRecipeData = computed(() => filterExcludedSuffixes(store.state.edgeSer
           console.log('更新Container、Recipe列表和存储开销占比...');
           fetchContainerInfo().catch(console.error);
           fetchFileRecipeInfo().catch(console.error);
-          fetchContainerStorageUsage().catch(console.error);
-          fetchRecipeStorageUsage().catch(console.error);
+          fetchStorageUsage().catch(console.error);
         }
       }, 10000);
     })
@@ -1789,7 +1759,7 @@ const fileRecipeData = computed(() => filterExcludedSuffixes(store.state.edgeSer
           // 格式化检测结果以便显示
           if (data.summary) {
             // 如果有summary字段，优先显示summary
-            logDetectOutput.value = data.summary + '\n\n' + (data.details || '');
+            logDetectOutput.value = (data.details || '')+ '\n\n' + data.summary;
           } else if (typeof data === 'object') {
             // 显示整个对象
             logDetectOutput.value = JSON.stringify(data, null, 2).replace(/\\n/g, '\n');
@@ -2617,10 +2587,9 @@ const fetchUploadFileList = async () => {
       openContentModal,
       formatSeconds,
       shouldDisplayContainersAndRecipes,
-      containerStorageUsage,
-      recipeStorageUsage,
-      fetchContainerStorageUsage,
-      fetchRecipeStorageUsage
+
+      storageUsage,
+      fetchStorageUsage,
     }
   }
 })

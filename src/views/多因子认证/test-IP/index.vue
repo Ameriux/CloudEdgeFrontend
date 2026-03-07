@@ -143,7 +143,7 @@ export default defineComponent({
       errorMessage.value = ''
       
       try {
-        const response = await fetch('http://localhost:4000/api/config')
+        const response = await fetch('/api-gateway/api/config')
         
         if (!response.ok) {
           throw new Error(`获取配置失败: ${response.status}`)

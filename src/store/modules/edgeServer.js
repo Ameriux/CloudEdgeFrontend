@@ -83,7 +83,14 @@ export default {
       const deltaEncryptionDelay = currentTotal - state.totalEncryptionDelay;
       
       state.totalEncryptionDelay = currentTotal;
-      state.lastEncryptionDelay = deltaEncryptionDelay > 0 ? deltaEncryptionDelay : 0;
+      
+      // 将加密延迟转换为 ms/MiB (1 ms = 1000 us, 1 MiB = 1024*1024 Byte)
+      if (deltaEncryptionDelay > 0 && deltaEncryptedSize > 0) {
+        // 延迟时间(us) -> ms，文件大小(Byte) -> MiB
+        state.lastEncryptionDelay = (deltaEncryptionDelay / 1000) / (deltaEncryptedSize / (1024 * 1024));
+      } else {
+        state.lastEncryptionDelay = 0;
+      }
       
       // 计算并更新元数据加密延迟差值
       const currentMetaTotal = data.metaEncryptionDelay || 0;
@@ -175,7 +182,15 @@ export default {
       const deltaDecryptionDelay = currentTotal - state.totalDecryptionDelay;
       
       state.totalDecryptionDelay = currentTotal;
-      state.lastDecryptionDelay = deltaDecryptionDelay > 0 ? deltaDecryptionDelay : 0;
+      
+      // 将解密延迟转换为 ms/MiB (1 ms = 1000 us, 1 MiB = 1024*1024 Byte)
+      // 解密时没有直接的文件大小差值，使用加密时的文件大小差值
+      if (deltaDecryptionDelay > 0 && state.encryptedSize > 0) {
+        // 延迟时间(us) -> ms，文件大小(Byte) -> MiB
+        state.lastDecryptionDelay = (deltaDecryptionDelay / 1000) / (state.encryptedSize / (1024 * 1024));
+      } else {
+        state.lastDecryptionDelay = 0;
+      }
       
       // 计算并更新元数据解密延迟差值
       const currentMetaTotal = data.metaDecryptionDelay || 0;

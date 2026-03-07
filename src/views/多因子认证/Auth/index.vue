@@ -83,12 +83,6 @@
             <el-input v-model="authData.DevicePassword_" type="password"></el-input>
           </el-form-item>
 
-          <!-- <el-form-item>
-            <el-card class="instruction-card">
-              <p>请在客户端执行 <code>./DEBEClient -r</code> 指令后点击下方按钮</p>
-            </el-card>
-          </el-form-item> -->
-
           <el-form-item class="form-footer">
             <div class="button-group">
               <el-button type="primary" @click="submitConfig">提交配置</el-button>
@@ -614,8 +608,8 @@ const fetchAvailableFiles = async () => {
     // 确保availableFiles初始化为空数组
     availableFiles.value = [];
     
-    // 使用完整URL调用API网关，API网关运行在端口4000
-    const fetchResponse = await fetch('http://localhost:4000/api/downloadable-files');
+    // 使用代理路径调用API网关
+    const fetchResponse = await fetch('/api-gateway/api/downloadable-files');
     
     console.log('API响应状态:', fetchResponse.status);
     console.log('API响应内容类型:', fetchResponse.headers.get('content-type'));
@@ -763,6 +757,16 @@ const filteredFiles = computed(() => {
 onMounted(() => {
   // 无论当前是哪个步骤，都获取配置数据，确保authData和step3AuthData都有值
   fetchConfigData();
+  
+  // 显式地从localStorage重新获取用户信息，确保页面刷新后也能正确显示登录状态
+  const savedUser = localStorage.getItem('mfaCurrentUser');
+  if (savedUser) {
+    try {
+      currentUser.value = JSON.parse(savedUser);
+    } catch (e) {
+      console.error('解析用户信息失败:', e);
+    }
+  }
   
   // 检查是否有保存的登录用户，如果是管理员则刷新用户列表
   if (currentUser.value && currentUser.value.isSuperuser) {
@@ -1095,10 +1099,10 @@ const fetchItemsData = async () => {
     console.log('获取到items数据:', data);
     
     // 处理数据结构
+    let processedItems = [];
     if (data && Array.isArray(data)) {
       console.log('获取到的数据数量:', data.length);
-      // 直接使用原始数据，不做额外解析
-      itemsData.value = data.map(item => ({
+      processedItems = data.map(item => ({
         id: item.id.toString(),
         title: item.title || '未知标题',
         content: item.content || '{}',
@@ -1107,7 +1111,7 @@ const fetchItemsData = async () => {
       }));
     } else if (data && data.data && Array.isArray(data.data)) {
       console.log('获取到的数据数量:', data.data.length);
-      itemsData.value = data.data.map(item => ({
+      processedItems = data.data.map(item => ({
         id: item.id.toString(),
         title: item.title || '未知标题',
         content: item.content || '{}',
@@ -1116,8 +1120,7 @@ const fetchItemsData = async () => {
       }));
     } else {
       console.log('数据结构不符合预期，使用模拟数据');
-      // 如果接口返回的数据不符合预期，使用模拟数据
-      itemsData.value = [
+      processedItems = [
         {
           id: '79',
           title: 'device_firmware',
@@ -1135,6 +1138,54 @@ const fetchItemsData = async () => {
       ];
     }
     
+    // 如果是管理员登录，根据终端ID筛选因子
+    if (currentUser.value && currentUser.value.isSuperuser) {
+      // 获取authClientIDStr_
+      const clientId = authData.value?.authClientIDStr_;
+      console.log('管理员模式 - 当前终端ID:', clientId, '类型:', typeof clientId);
+      
+      if (clientId) {
+        // 确保clientId为字符串类型，便于后续比较
+        const clientIdStr = String(clientId);
+        console.log('转换后的终端ID字符串:', clientIdStr);
+        
+        // 根据Items界面的逻辑，使用owner_id字段进行匹配
+        // 简单直接地筛选拥有者ID等于当前客户端ID的因子
+        itemsData.value = processedItems.filter(item => {
+          try {
+            // 获取因子的owner_id并转换为字符串进行比较
+            const ownerIdStr = String(item.owner_id);
+            console.log(`因子ID: ${item.id}, 标题: ${item.title}, 拥有者ID: ${item.owner_id}`);
+            
+            // 直接比较owner_id与clientIdStr
+            const match = ownerIdStr === clientIdStr;
+            console.log(`因子匹配结果: ${item.title} - ${match}`);
+            
+            return match;
+          } catch (e) {
+            // 如果发生错误，记录日志但不影响其他因子的筛选
+            console.warn('处理因子时出错:', e, item);
+            return false;
+          }
+        });
+        
+        console.log(`筛选后的因子数量: ${itemsData.value.length}，客户端ID: ${clientIdStr}`);
+        
+        // 如果没有找到匹配的因子，显示所有因子并给出提示
+        if (itemsData.value.length === 0) {
+          console.log('未找到拥有者ID匹配的因子，显示所有因子');
+          itemsData.value = processedItems;
+        }
+      } else {
+        console.log('未获取到终端ID，显示所有因子');
+        itemsData.value = processedItems;
+      }
+    } else {
+      // 非管理员显示所有因子
+      console.log('非管理员模式，显示所有因子');
+      itemsData.value = processedItems;
+    }
+    
     loadingItems.value = false;
   } catch (error) {
     console.error('获取items数据时出错:', error);
@@ -1143,20 +1194,6 @@ const fetchItemsData = async () => {
     // 出错时也提供模拟数据以便展示
     console.log('API调用失败，使用模拟数据');
     itemsData.value = [
-      {
-        id: '79',
-        title: 'device_firmware',
-        content: '{"algorithm":"SHA256","hash":"fdc8ccdba5e55f635890a598f1071d750f7972e7cacff3eeaa5134ac73ad0fd2","items":[{"content":"2","name":"CPUCores"},{"content":"GenuineIntel","name":"CPUID"},{"content":"ebef0c17d7bc4c61912349848b9f1c60\n","name":"SystemID"},{"content":"ubuntu","name":"MachineName"}],"key":"2"}',
-        description: null,
-        owner_id: 2
-      },
-      {
-        id: '80',
-        title: 'puf_mac',
-        content: '{"C0":"e41509192d491a053b0edac0818658e2","T":"b4359efdb2edab6554caa9fdb5df8f1e1247b406b985455dcf24d1d2ca5215c","puf":"ddd0c515673ee8157f0041fc253a8a32"}',
-        description: null,
-        owner_id: 2
-      }
     ];
   }
 };
@@ -1230,18 +1267,6 @@ const goToNextStep = () => {
   activeStep.value += 1;
   // 保存到localStorage
   localStorage.setItem('mfaAuthStep', activeStep.value.toString());
-};
-
-// 模拟认证注册
-const handleAuth = () => {
-  // 这里应该调用认证接口
-  // 模拟成功
-  setTimeout(() => {
-    ElMessage.success('认证注册成功，token已获取');
-    activeStep.value = 3;
-    // 保存到localStorage
-    localStorage.setItem('mfaAuthStep', '3');
-  }, 1000);
 };
 
 // 完成流程，重置到第一步
@@ -1496,37 +1521,57 @@ const checkClientStatus = async () => {
     
     try {
       if (currentUserData.isSuperuser) {
-        appendToClientLog(`👑 管理员用户：尝试获取所有用户信息`);
-        // 超级用户可以获取所有用户信息
-        const response = await request.get('/api/v1/users/');
+        appendToClientLog(`👑 管理员用户：尝试获取用户信息`);
         
-        let users = [];
-        // 根据实际API返回格式解析数据，正确的格式是{ data: [...], count: number }
-        if (response && response.data && Array.isArray(response.data.data)) {
-          // 解析API返回的数据
-          users = response.data.data;
-          appendToClientLog(`📋 获取到用户列表，共${users.length}个用户，格式正确`);
-        } else if (response && Array.isArray(response.data)) {
-          // 兼容旧格式
-          users = response.data;
-          appendToClientLog(`📋 获取到用户列表，共${users.length}个用户，使用兼容格式`);
+        // 如果有clientId，优先使用GET /api/v1/users/{user_id}接口直接获取特定用户
+        if (clientId) {
+          appendToClientLog(`🔍 有客户端ID(${clientId})，尝试直接获取对应ID的用户信息`);
+          try {
+            const userResponse = await request.get(`/api/v1/users/${clientId}`);
+            if (userResponse && userResponse.data) {
+              targetUser = userResponse.data;
+              appendToClientLog(`✅ 直接获取到用户信息: ${targetUser.email}`);
+            }
+          } catch (userByIdError) {
+            console.error(`❌ 通过ID获取用户失败，尝试备用方案:`, userByIdError);
+            appendToClientLog(`⚠️ 通过ID获取用户失败: ${userByIdError.message}，使用备用方案`);
+          }
         }
         
-        // 如果有clientId，查找对应客户端ID的用户
-        if (clientId) {
-          targetUser = users.find(user => user.client_id === clientId);
-          if (targetUser) {
-            appendToClientLog(`✅ 管理员查找到客户端用户: ${targetUser.email}`);
-          } else {
-            appendToClientLog(`⚠️ 管理员未找到对应客户端ID的用户，使用第一个用户`);
-            // 如果找不到，使用第一个用户作为备选
-            targetUser = users[0] || null;
+        // 如果直接获取失败或没有clientId，回退到获取所有用户
+        if (!targetUser) {
+          appendToClientLog(`🔄 备用方案：获取所有用户信息`);
+          // 超级用户可以获取所有用户信息
+          const response = await request.get('/api/v1/users/');
+          
+          let users = [];
+          // 根据实际API返回格式解析数据，正确的格式是{ data: [...], count: number }
+          if (response && response.data && Array.isArray(response.data.data)) {
+            // 解析API返回的数据
+            users = response.data.data;
+            appendToClientLog(`📋 获取到用户列表，共${users.length}个用户，格式正确`);
+          } else if (response && Array.isArray(response.data)) {
+            // 兼容旧格式
+            users = response.data;
+            appendToClientLog(`📋 获取到用户列表，共${users.length}个用户，使用兼容格式`);
           }
-        } else {
-          // 没有clientId，使用第一个用户
-          targetUser = users[0] || null;
-          if (targetUser) {
-            appendToClientLog(`📋 使用第一个用户信息: ${targetUser.email}`);
+          
+          // 如果有clientId，查找对应客户端ID的用户
+          if (clientId) {
+            targetUser = users.find(user => user.client_id === clientId || user.id === parseInt(clientId));
+            if (targetUser) {
+              appendToClientLog(`✅ 管理员查找到客户端用户: ${targetUser.email}`);
+            } else {
+              appendToClientLog(`⚠️ 管理员未找到对应客户端ID的用户，使用第一个用户`);
+              // 如果找不到，使用第一个用户作为备选
+              targetUser = users[0] || null;
+            }
+          } else {
+            // 没有clientId，使用第一个用户
+            targetUser = users[0] || null;
+            if (targetUser) {
+              appendToClientLog(`📋 使用第一个用户信息: ${targetUser.email}`);
+            }
           }
         }
       } else {
@@ -1734,10 +1779,22 @@ const uploadFiles = async () => {
   try {
     statusResult = await checkClientStatus();
     console.log('checkClientStatus返回值:', statusResult);
+    // 添加额外的调试日志，明确当前判断状态
+    if (statusResult === 1) {
+      console.log('✅ 客户端状态判断：已激活');
+      appendToClientLog(`✅ 客户端状态判断：已激活，无需记录异常日志`);
+    } else if (statusResult === 0) {
+      console.log('⚠️ 客户端状态判断：未激活');
+    } else {
+      console.log('❓ 客户端状态判断：未知/获取失败');
+      appendToClientLog(`❓ 客户端状态判断：未知/获取失败`);
+    }
   } catch (err) {
     console.error('❌ 执行checkClientStatus出错:', err);
     statusResult = -1; // 设置为-1表示获取失败
+    appendToClientLog(`❌ 执行checkClientStatus出错: ${err.message}`);
   }
+  // 只有在明确判断为未激活状态（返回0）时才记录异常日志
   if (statusResult === 0) {
     // 未激活状态：抛出异常日志，并提示用户，并写入IP.log文件
     appendToClientLog(`⚠️ 检测到当前客户端状态为未激活`);
@@ -1769,8 +1826,53 @@ const uploadFiles = async () => {
         console.warn('获取客户端ID失败:', e);
       }
     }
+    
+    // 获取IP检测时间
+    let detectionTime = '0'; // 默认值，防止API调用失败
+    try {
+      console.log('开始调用IP检测时间API');
+      // 使用request客户端而不是apiGateway客户端，确保正确的基础URL
+      const detectionResponse = await request.get('/api/v1/mfa/ip-detection-time');
+      console.log('API调用结果:', detectionResponse);
+      
+      // 注意：request的响应拦截器已经将response.data提取出来返回
+      // 所以不需要再访问detectionResponse.data
+      
+      // 确保detectionResponse存在
+      if (detectionResponse) {
+        // 明确检查ip_detection_time_ms的类型和值
+        console.log('ip_detection_time_ms值:', detectionResponse.ip_detection_time_ms);
+        console.log('ip_detection_time_ms类型:', typeof detectionResponse.ip_detection_time_ms);
+        
+        // 确保ip_detection_time_ms是有效的数字
+        if (typeof detectionResponse.ip_detection_time_ms === 'number') {
+          detectionTime = detectionResponse.ip_detection_time_ms.toString();
+          console.log('更新后的检测时间:', detectionTime);
+        } else if (detectionResponse.ip_detection_time_ms === null) {
+          console.warn('ip_detection_time_ms返回null');
+        } else {
+          console.warn('ip_detection_time_ms不是有效的数字:', detectionResponse.ip_detection_time_ms);
+        }
+      } else {
+        console.warn('API返回空数据');
+      }
+    } catch (e) {
+      console.error('获取IP检测时间失败:', e);
+      // 输出详细的错误信息以便调试
+      if (e.response) {
+        console.error('错误响应状态:', e.response.status);
+        console.error('错误响应数据:', e.response.data);
+        console.error('错误响应头:', e.response.headers);
+      } else if (e.request) {
+        console.error('请求未收到响应:', e.request);
+      } else {
+        console.error('请求配置错误:', e.message);
+      }
+      console.error('完整错误信息:', JSON.stringify(e, null, 2));
+    }
+    
     // 使用字符串拼接而非模板字符串，避免可能的格式问题
-    const logMessage = '[' + timestamp + '] 检测到当前客户端ID：' + (clientId || '未知ID') + ' 出现IP变动，现已暂时封禁该用户并告知管理员 240922173@qq.com\n';
+    const logMessage = '[' + timestamp + '] 检测到当前客户端ID：' + (clientId || '未知ID') + ' 出现IP变动，现已暂时封禁该用户并告知管理员 240922173@qq.com。本次异常检测与威胁预警耗时：' + detectionTime + 'ms（包含异常检测与邮件告警）\n';
     
     appendToClientLog(`📝 准备写入异常日志: ${logMessage}`);
     
@@ -1841,9 +1943,12 @@ const fetchEdgeServerLogs = async () => {
     appendToEdgeServerLog(`[${new Date().toLocaleTimeString()}] 直接调用apiGateway专用端点...`);
     
     try {
-      // 直接调用apiGateway的专用端点获取日志
+      // 直接调用apiGateway的专用端点获取日志，添加缓存控制参数确保获取最新日志
       appendToEdgeServerLog(`[${new Date().toLocaleTimeString()}] 发起API请求...`);
-      const gatewayResponse = await apiGateway.get('/api/edge-server/logs');
+      // 添加时间戳作为查询参数，确保每次都是新请求，避免缓存问题
+      const timestamp = new Date().getTime();
+      appendToEdgeServerLog(`[${new Date().toLocaleTimeString()}] 添加时间戳参数避免缓存: ${timestamp}`);
+      const gatewayResponse = await apiGateway.get(`/api/edge-server/logs?t=${timestamp}`);
       
       appendToEdgeServerLog(`✅ 服务器请求成功，检查响应对象`);
       
@@ -1873,35 +1978,94 @@ const fetchEdgeServerLogs = async () => {
           }
           
           // 检查是否有日志数据
-          if (responseData.logs && Array.isArray(responseData.logs)) {
-            // appendToEdgeServerLog(`✅ 发现logs数组，包含 ${responseData.logs.length} 条记录`);
-            
-            // 过滤并显示非空日志
-            const validLogs = responseData.logs.filter(log => log && log.trim());
-            if (validLogs.length > 0) {
-              // appendToEdgeServerLog(`✅ 过滤后有 ${validLogs.length} 条有效日志记录`);
-              const formattedLogs = validLogs.map((log, i) => `${i + 1}: ${log}`).join('\n');
-              appendToEdgeServerLog(formatLogSection('EdgeServer 日志内容', formattedLogs));
-            } else {
-              appendToEdgeServerLog(`⚠️ logs数组存在但没有有效内容`);
-            }
-          } else if (responseData.raw) {
-            // 尝试从raw字段获取日志
-            appendToEdgeServerLog(`🔍 检查raw字段内容:`);
-            appendToEdgeServerLog(formatLogSection('raw字段', responseData.raw));
-            
-            // 尝试解析raw字段中的JSON
-            try {
-              const parsedRaw = JSON.parse(responseData.raw);
-              appendToEdgeServerLog(`✅ 成功解析raw字段为JSON`);
-              if (parsedRaw.logs && Array.isArray(parsedRaw.logs)) {
-                appendToEdgeServerLog(`✅ 从解析后的raw中发现logs数组，包含 ${parsedRaw.logs.length} 条记录`);
-                const formattedLogs = parsedRaw.logs.map((log, i) => `${i + 1}: ${log}`).join('\n');
-                appendToEdgeServerLog(formatLogSection('EdgeServer 日志内容 (从raw解析)', formattedLogs));
+            if (responseData.logs && Array.isArray(responseData.logs)) {
+              appendToEdgeServerLog(`✅ 发现logs数组，包含 ${responseData.logs.length} 条记录`);
+              
+              // 过滤并显示非空日志
+              const validLogs = responseData.logs.filter(log => log && log.trim());
+              if (validLogs.length > 0) {
+                appendToEdgeServerLog(`✅ 过滤后有 ${validLogs.length} 条有效日志记录`);
+                // 显示日志内容的前几条和后几条，以便快速查看最新内容
+                appendToEdgeServerLog(`📊 日志内容预览：`);
+                if (validLogs.length > 5) {
+                  // 显示前3条作为上下文
+                  validLogs.slice(0, 3).forEach((log, i) => {
+                    appendToEdgeServerLog(`  ${i + 1}: ${log}`);
+                  });
+                  appendToEdgeServerLog(`  ... 省略 ${validLogs.length - 6} 条日志 ...`);
+                  // 显示后3条（最新的日志）
+                  validLogs.slice(-3).forEach((log, i) => {
+                    appendToEdgeServerLog(`  ${validLogs.length - 2 + i}: ${log}`);
+                  });
+                } else {
+                  // 如果日志数量较少，全部显示
+                  validLogs.forEach((log, i) => {
+                    appendToEdgeServerLog(`  ${i + 1}: ${log}`);
+                  });
+                }
+                
+                // 生成完整格式的日志并添加到显示
+                const formattedLogs = validLogs.map((log, i) => `${i + 1}: ${log}`).join('\n');
+                appendToEdgeServerLog(formatLogSection('EdgeServer 日志内容', formattedLogs));
+                
+                // 检查是否包含最新的错误日志（如认证token失败）
+                const errorLogs = validLogs.filter(log => log.includes('recv the auth token fails') || log.toLowerCase().includes('error') || log.toLowerCase().includes('fail'));
+                if (errorLogs.length > 0) {
+                  // appendToEdgeServerLog(`🚨 检测到错误相关日志，共 ${errorLogs.length} 条：`);
+                  errorLogs.forEach(log => {
+                    // appendToEdgeServerLog(`  ${log}`);
+                  });
+                }
+              } else {
+                appendToEdgeServerLog(`⚠️ logs数组存在但没有有效内容`);
               }
-            } catch (parseError) {
-              appendToEdgeServerLog(`⚠️ 无法解析raw字段为JSON: ${parseError.message}`);
-            }
+            } else if (responseData.raw) {
+              // 尝试从raw字段获取日志
+              appendToEdgeServerLog(`🔍 检查raw字段内容:`);
+              appendToEdgeServerLog(formatLogSection('raw字段', responseData.raw));
+              
+              // 尝试解析raw字段中的JSON
+              try {
+                const parsedRaw = JSON.parse(responseData.raw);
+                appendToEdgeServerLog(`✅ 成功解析raw字段为JSON`);
+                if (parsedRaw.logs && Array.isArray(parsedRaw.logs)) {
+                  appendToEdgeServerLog(`✅ 从解析后的raw中发现logs数组，包含 ${parsedRaw.logs.length} 条记录`);
+                  
+                  // 过滤并显示非空日志
+                  const validLogs = parsedRaw.logs.filter(log => log && log.trim());
+                  if (validLogs.length > 0) {
+                    appendToEdgeServerLog(`✅ 过滤后有 ${validLogs.length} 条有效日志记录`);
+                    // 显示日志预览
+                    appendToEdgeServerLog(`📊 日志内容预览：`);
+                    if (validLogs.length > 5) {
+                      validLogs.slice(0, 3).forEach((log, i) => {
+                        appendToEdgeServerLog(`  ${i + 1}: ${log}`);
+                      });
+                      appendToEdgeServerLog(`  ... 省略 ${validLogs.length - 6} 条日志 ...`);
+                      validLogs.slice(-3).forEach((log, i) => {
+                        appendToEdgeServerLog(`  ${validLogs.length - 2 + i}: ${log}`);
+                      });
+                    } else {
+                      validLogs.forEach((log, i) => {
+                        appendToEdgeServerLog(`  ${i + 1}: ${log}`);
+                      });
+                    }
+                  }
+                  
+                  const formattedLogs = parsedRaw.logs.map((log, i) => `${i + 1}: ${log}`).join('\n');
+                  appendToEdgeServerLog(formatLogSection('EdgeServer 日志内容 (从raw解析)', formattedLogs));
+                }
+              } catch (parseError) {
+                appendToEdgeServerLog(`⚠️ 无法解析raw字段为JSON: ${parseError.message}`);
+                // 尝试直接将raw字段作为日志内容处理
+                appendToEdgeServerLog(`🔄 尝试直接处理raw字段内容作为日志`);
+                const rawLogs = String(responseData.raw).split('\n').filter(line => line.trim());
+                if (rawLogs.length > 0) {
+                  appendToEdgeServerLog(`✅ 从raw字段提取到 ${rawLogs.length} 行日志`);
+                  const formattedLogs = rawLogs.map((log, i) => `${i + 1}: ${log}`).join('\n');
+                  appendToEdgeServerLog(formatLogSection('EdgeServer 日志内容 (直接从raw提取)', formattedLogs));
+                }
+              }
           } else {
             appendToEdgeServerLog(`⚠️ 响应中没有找到logs数组或raw字段`);
             appendToEdgeServerLog(`📋 响应对象的所有字段: ${Object.keys(responseData).join(', ')}`);

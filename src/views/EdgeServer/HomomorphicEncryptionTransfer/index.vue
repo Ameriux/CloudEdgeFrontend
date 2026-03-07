@@ -3,7 +3,7 @@
     <h1>同态加密-加密传输</h1>
     
     <div class="encryption-section">
-      <h2>同态加密传输 <span class="implementation-note">通过采用<span class="highlight-library">SEAL</span>库和<span class="highlight-library">Pyfhel</span>库实现</span></h2>
+      <h2>同态加密传输 <span class="implementation-note">同时通过<span class="highlight-library">SEAL</span>库和<span class="highlight-library">Pyfhel</span>库实现</span></h2>
       
       <div class="form-group">
         <label>选择同态加密算子：</label>
@@ -250,17 +250,15 @@ export default {
 }
 
 .encryption-section {
-  background-color: #f9f9f9;
+  background-color: #ffffff;
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
-  margin-bottom: 30px;
-  text-align: center;
-  font-size: 28px;
-  color: #1f2937;
+  color: #333;
+  margin-bottom: 20px;
 }
 
 h2 {

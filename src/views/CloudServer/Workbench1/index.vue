@@ -4,18 +4,8 @@
       <template #header>
         <div class="card-header">
           <span>CloudServer - 工作台 1</span>
-          <el-button type="primary" size="small" @click="createNewWorkbench">新建工作台</el-button>
         </div>
       </template>
-
-      <div class="command-input">
-        <el-input
-          v-model="command"
-          placeholder="请输入指令"
-          style="width: 80%"
-        ></el-input>
-        <el-button type="primary" @click="executeCommand">执行</el-button>
-      </div>
 
       <div style="margin: 10px 0;">
         <el-button type="success" size="small" @click="fetchAllData">更新数据</el-button>
@@ -28,7 +18,7 @@
             <el-statistic
               v-model:value="inputDataSize"
               title="传入数据大小"
-              suffix="B"
+              suffix=" MB"
             />
           </el-col>
           <el-col :span="6">
@@ -42,14 +32,14 @@
             <el-statistic
               v-model:value="actualStorageSize"
               title="实际存储数据大小"
-              suffix="B"
+              suffix="MB"
             />
           </el-col>
           <el-col :span="6">
             <el-statistic
               v-model:value="backupSyncDelay"
               title="单边缘备份同步延迟"
-              suffix="ms"
+              suffix="ms/MiB"
             />
           </el-col>
         </el-row>
@@ -58,7 +48,7 @@
             <el-statistic
               v-model:value="dedupSize"
               title="去重数据量"
-              suffix="B"
+              suffix="MB"
             />
           </el-col>
         </el-row>
@@ -162,22 +152,15 @@ export default defineComponent({
     // 从store获取数据
     const containerData = computed(() => store.getters['cloudServer/getAllData'].containerData)
     const fileRecipeData = computed(() => store.getters['cloudServer/getAllData'].fileRecipeData)
-    const inputDataSize = computed(() => store.getters['cloudServer/getAllData'].inputDataSize)
-    const redundancyReductionTime = computed(() => store.getters['cloudServer/getAllData'].redundancyReductionTime)  // dedup_time
-    const actualStorageSize = computed(() => store.getters['cloudServer/getAllData'].actualStorageSize)  // store_data_size
+    const inputDataSize = computed(() => (store.getters['cloudServer/getAllData'].inputDataSize / 1024 / 1024).toFixed(4))
+    const redundancyReductionTime = computed(() => store.getters['cloudServer/getAllData'].redundancyReductionTime )  // dedup_time
+    const actualStorageSize = computed(() => (store.getters['cloudServer/getAllData'].actualStorageSize / 1024 / 1024).toFixed(4))  // store_data_size
     const backupSyncDelay = computed(() => store.getters['cloudServer/getAllData'].backupSyncDelay)  // migration_time
-    const dedupSize = computed(() => store.getters['cloudServer/getAllData'].dedupSize)
-    const timeUnit = computed(() => store.getters['cloudServer/getAllData'].timeUnit)
-    const sizeUnit = computed(() => store.getters['cloudServer/getAllData'].sizeUnit)
+    const dedupSize = computed(() => (store.getters['cloudServer/getAllData'].dedupSize / 1024 / 1024).toFixed(4))
     const fullLogContent = computed(() => store.getters['cloudServer/getAllData'].fullLogContent)
 
     const incrementalSyncTraffic = ref(0)
     const incrementalSyncTime = ref(0)
-    
-    // 取消自动生成数据
-    const generateMockData = () => {
-      // 不生成任何模拟数据
-    }
 
     // 保持数据为0
     const updateMetrics = () => {
@@ -479,7 +462,7 @@ export default defineComponent({
           // 格式化检测结果以便显示
           if (data.summary) {
             // 如果有summary字段，优先显示summary
-            logDetectOutput.value = data.summary + '\n\n' + (data.details || '');
+            logDetectOutput.value = (data.details || '')+ '\n\n' + data.summary  ;
           } else if (typeof data === 'object') {
             // 显示整个对象
             logDetectOutput.value = JSON.stringify(data, null, 2).replace(/\\n/g, '\n');

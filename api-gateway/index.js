@@ -1065,6 +1065,122 @@ app.post('/api/utils/write-log', async (req, res) => {
   }
 });
 
+/**
+ * @openapi
+ * /defense/gradient/leakage:
+ *   get:
+ *     summary: 执行梯度泄露防御测试并保存结果图片
+ *     description: 在assets目录下执行curl命令获取梯度泄露防御测试结果图片
+ *     responses:
+ *       200:
+ *         description: 成功执行测试并保存图片
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: 
+ *                   type: string
+ *                 filePath: 
+ *                   type: string
+ *       500:
+ *         description: 执行失败
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: 
+ *                   type: string
+ */
+app.get('/defense/gradient/leakage', async (req, res) => {
+  try {
+    // 确保assets目录存在
+    const assetsDir = '/home/cluster/ZZX/CloudEdgeFrontend/src/assets';
+    const outputFilePath = path.join(assetsDir, 'TightMosaic_DP_eps.png');
+    
+    // 执行curl命令下载图片
+    const curlCommand = `curl http://localhost:8080/defense/gradient/leakage -o ${outputFilePath}`;
+    console.log(`Executing command: ${curlCommand}`);
+    
+    // 执行命令
+    const { stdout, stderr } = await execPromise(curlCommand);
+    
+    if (stderr) {
+      console.error('Curl stderr:', stderr);
+      // 即使有stderr输出，只要文件被成功下载，也认为成功
+    }
+    
+    // 检查文件是否成功创建
+    try {
+      await fs.access(outputFilePath);
+      res.json({
+        message: '梯度泄露防御测试图片下载成功',
+        filePath: outputFilePath
+      });
+    } catch (accessError) {
+      throw new Error('图片文件下载失败');
+    }
+  } catch (error) {
+    console.error('Error executing gradient leakage defense test:', error);
+    res.status(500).json({ error: `执行失败: ${error.message}` });
+  }
+});
+
+/**
+ * @openapi
+ * /tensorboard/start:
+ *   get:
+ *     summary: 启动TensorBoard服务
+ *     description: 执行命令启动TensorBoard服务，用于展示模型训练结果
+ *     responses:
+ *       200:
+ *         description: 成功启动TensorBoard服务
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: 
+ *                   type: string
+ *                 status: 
+ *                   type: string
+ *       500:
+ *         description: 启动失败
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error: 
+ *                   type: string
+ */
+app.get('/tensorboard/start', async (req, res) => {
+  try {
+    // 定义TensorBoard启动命令
+    const tensorboardCommand = 'cd ~/CloudEdgePrototype-zwj_v2/FedProject && nohup python -m tensorboard.main --logdir=result/ --port=6006 --host=0.0.0.0 > tensorboard.log 2>&1 &';
+    console.log(`Executing TensorBoard command: ${tensorboardCommand}`);
+    
+    // 执行命令
+    const { stdout, stderr } = await execPromise(tensorboardCommand);
+    
+    if (stderr) {
+      console.error('TensorBoard stderr:', stderr);
+      // 即使有stderr输出，我们仍然假设命令成功启动
+    }
+    
+    console.log('TensorBoard stdout:', stdout);
+    
+    res.json({
+      message: 'TensorBoard服务已成功启动',
+      status: 'success'
+    });
+  } catch (error) {
+    console.error('Error starting TensorBoard:', error);
+    res.status(500).json({ error: `启动TensorBoard失败: ${error.message}` });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`EdgeServer-Client API Gateway is running on port ${PORT}`);
   console.log(`Swagger UI available at http://localhost:${PORT}/api-docs`);

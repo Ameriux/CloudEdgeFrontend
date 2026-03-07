@@ -28,7 +28,7 @@
           </el-statistic>
         </el-col>
         <el-col :span="12">
-          <el-statistic v-model:value="downloadDataSize" title="下载数据大小" suffix="B">
+          <el-statistic v-model:value="downloadDataSize" title="下载数据大小" suffix="MB">
           </el-statistic>
         </el-col>
       </el-row>
@@ -157,7 +157,7 @@ const dataWriteDelay = computed({
 })
 
 const downloadDataSize = computed({
-  get: () => clientDownloadData.value.downloadDataSize || 0,
+  get: () => clientDownloadData.value.downloadDataSize / 1024 / 1024 || 0,
   set: (value) => {
     updateClientData({ downloadDataSize: value })
   }

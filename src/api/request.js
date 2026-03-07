@@ -88,7 +88,7 @@ request.interceptors.response.use(
 
 // 创建API网关的axios实例
 export const apiGateway = axios.create({
-  baseURL: '/api-gateway', // 使用Vite代理配置
+  baseURL: '/api-gateway', // 使用代理路径，避免跨域问题
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

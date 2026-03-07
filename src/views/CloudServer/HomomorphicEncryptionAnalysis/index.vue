@@ -4,7 +4,7 @@
     
     <div class="analysis-section">
       <div class="section-header">
-        <h2>密文数据分析 <span class="implementation-note">通过采用<span class="highlight-library">SEAL</span>库和<span class="highlight-library">Pyfhel</span>库实现</span></h2>
+        <h2>密文数据分析 <span class="implementation-note">同时通过<span class="highlight-library">SEAL</span>库和<span class="highlight-library">Pyfhel</span>库实现</span></h2>
       </div>
       
       <div class="database-list-section">
@@ -425,7 +425,7 @@ export default {
 <style scoped>
 .homomorphic-encryption-container {
   padding: 20px;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -445,18 +445,19 @@ h2 {
 }
 
 .implementation-note {
-  font-size: 16px;
-  font-weight: normal;
+  font-size: 14px;
   color: #666;
   margin-left: 10px;
+  font-weight: normal;
   display: inline-block;
 }
 
 .highlight-library {
-  color: #333;
-  font-weight: 600;
-  font-size: 16px;
-  padding: 0 2px;
+  background-color: #e6f7ff;
+  color: #1890ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
 }
 
 h3 {
@@ -466,9 +467,9 @@ h3 {
 
 .analysis-section {
   background: #ffffff;
-  padding: 24px;
+  padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 30px;
 }
 

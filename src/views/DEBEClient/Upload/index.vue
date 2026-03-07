@@ -38,11 +38,21 @@
     <!-- EdgeServer选择已移至header部分 -->
 
     <div class="algorithm-selection">
+
       <el-row :gutter="20">
         <el-col :span="12">
-          <el-form-item label="密钥哈希算法">
+          <el-form-item label="密钥交换算法">
+            <el-select v-model="asymmetricEncryptionAlgorithm" placeholder="请选择算法">
+              <el-option label="基于椭圆曲线的 Diffe-Hellman 密钥协商算法" value="ecc"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        
+      </el-row>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="数据块指纹算法">
             <el-select v-model="hashAlgorithm" placeholder="请选择算法">
-              <el-option label="无" value="none"></el-option>
               <el-option label="SHA_1" value="SHA_1"></el-option>
               <el-option label="SHA_256" value="SHA_256"></el-option>
               <el-option label="MD5" value="MD5"></el-option>
@@ -53,30 +63,11 @@
         <el-col :span="12">
           <el-form-item label="文件加解密算法">
             <el-select v-model="encryptionAlgorithm" placeholder="请选择算法">
-              <el-option label="无" value="none"></el-option>
               <el-option label="AES_128_CFB" value="AES_128_CFB"></el-option>
               <el-option label="AES_128_GCM" value="AES_128_GCM"></el-option>
               <el-option label="AES_256_CFB" value="AES_256_CFB"></el-option>
               <el-option label="AES_256_GCM" value="AES_256_GCM"></el-option>
               <el-option label="SM4" value="SM4"></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="密钥交换算法">
-            <el-select v-model="asymmetricEncryptionAlgorithm" placeholder="请选择算法">
-              <el-option label="无" value="none"></el-option>
-              <el-option label="椭圆曲线加密算法" value="ecc"></el-option>
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label=" 安全传输算法">
-            <el-select v-model="otherAlgorithm" placeholder="请选择算法">
-              <el-option label="无" value="none"></el-option>
-              <el-option label="连接安全算法" value="connection_security"></el-option>
             </el-select>
           </el-form-item>
         </el-col>
@@ -105,17 +96,11 @@
     <div class="metrics-display">
       <h3>数据展示</h3>
       <el-row :gutter="20">
-        <el-col :span="6">
+        <el-col :span="12">
           <el-statistic v-model:value="chunkSize" title="分块大小" suffix="B" />
         </el-col>
-        <el-col :span="6">
+        <el-col :span="12">
           <el-statistic v-model:value="chunkProcessingTime" title="分块处理时间" suffix="ms" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic v-model:value="dataSendDelay" title="数据发送延迟" suffix="ms" />
-        </el-col>
-        <el-col :span="6">
-          <el-statistic v-model:value="uploadDataSize" title="上传数据大小" suffix="B" />
         </el-col>
       </el-row>
     </div>
@@ -128,7 +113,7 @@
         <el-table-column prop="chunkSize" label="分块大小(B)" min-width="120"></el-table-column>
         <el-table-column prop="chunkProcessingTime" label="分块处理时间(ms)" min-width="150"></el-table-column>
         <el-table-column prop="dataSendDelay" label="数据发送延迟(ms)" min-width="150"></el-table-column>
-        <el-table-column prop="uploadDataSize" label="上传数据大小(B)" min-width="150"></el-table-column>
+        <el-table-column prop="uploadDataSize" label="上传数据大小(MB)" min-width="150"></el-table-column>
       </el-table>
     </div>
 
@@ -201,7 +186,7 @@ const logOutput = computed(() => clientUploadData.value.logOutput || '')
 const chunkSize = computed(() => clientUploadData.value.chunkSize || 0)
 const chunkProcessingTime = computed(() => clientUploadData.value.chunkProcessingTime || 0)
 const dataSendDelay = computed(() => clientUploadData.value.dataSendDelay || 0)
-const uploadDataSize = computed(() => clientUploadData.value.uploadDataSize || 0)
+const uploadDataSize = computed(() => clientUploadData.value.uploadDataSize / 1024 / 1024 .toFixed(2) || 0)
 const singleFileData = computed(() => clientUploadData.value.singleFileData || [])
 
 // 更新客户端数据的方法
@@ -232,11 +217,6 @@ watch(
   { immediate: true } // 立即执行一次，确保初始值正确
 )
 
-
-// 直接使用原始数据，不进行格式化
-const formatUploadDataSize = (value) => {
-  return value;
-}
 
 // 新增：打开文件选择对话框
 const openFileDialog = () => {
@@ -1318,7 +1298,7 @@ const fetchUploadInfo = () => {
             chunkSize: latestFile.chunk_average_size || 0, // 原始B单位数据
             chunkProcessingTime: latestFile.chunk_process_time * 1000 || 0,
             dataSendDelay: latestFile.data_send_time * 1000 || 0,
-            uploadDataSize: latestFile.data_size || 0, // 原始B单位数据
+            uploadDataSize: latestFile.data_size / 1024 / 1024 .toFixed(2) || 0, // 转换为MB单位并保留2位小数
             uploadTime: new Date().toISOString(), // 添加上传时间
             clientId: currentClientId.value // 添加客户端ID
           };

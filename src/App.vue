@@ -137,10 +137,18 @@
             <el-menu-item index="/cloudserver/homomorphic-encryption-analysis"
               >同态加密-密文数据分析</el-menu-item
             >
+            <el-sub-menu index="/cloudserver/federated-learning">
+              <template #title>
+                <i class="el-icon-s-data"></i><span>联邦学习</span>
+              </template>
+              <el-menu-item index="/cloudserver/federated-learning/model-training"
+                >模型训练&投毒防御</el-menu-item
+              >
+              <el-menu-item index="/cloudserver/federated-learning/gradient-leakage"
+                >梯度泄露防御</el-menu-item
+              >
+            </el-sub-menu>
           </el-sub-menu>
-          <el-menu-item index="/federated-learning"
-            ><i class="el-icon-s-data"></i><span>联邦学习</span></el-menu-item
-          >
         </el-menu>
       </aside>
 

@@ -34,6 +34,14 @@ export interface paths {
     /** Test Block */
     get: operations["auth-test_block"];
   };
+  "/api/v1/mfa/ip-detection-time": {
+    /**
+     * Get Ip Detection Time
+     * @description Get the latest IP detection time.
+     * Returns the time taken for the most recent IP detection and email sending in milliseconds.
+     */
+    get: operations["auth-get_ip_detection_time"];
+  };
   "/api/v1/authapi/totp": {
     /**
      * Get Totp
@@ -227,6 +235,8 @@ export interface components {
       /** Auth Code */
       auth_code: string;
       server_mac: components["schemas"]["PUFMac"];
+      /** Ip Detection Time Ms */
+      ip_detection_time_ms?: number | null;
     };
     /** Body_login-login_access_token */
     "Body_login-login_access_token": {
@@ -257,6 +267,16 @@ export interface components {
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
+    };
+    /** IpDetectionTimeResponse */
+    IpDetectionTimeResponse: {
+      /** Ip Detection Time Ms */
+      ip_detection_time_ms?: number | null;
+      /**
+       * Message
+       * @default
+       */
+      message?: string;
     };
     /** ItemCreate */
     ItemCreate: {
@@ -606,6 +626,21 @@ export interface operations {
       422: {
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  /**
+   * Get Ip Detection Time
+   * @description Get the latest IP detection time.
+   * Returns the time taken for the most recent IP detection and email sending in milliseconds.
+   */
+  "auth-get_ip_detection_time": {
+    responses: {
+      /** @description Successful Response */
+      200: {
+        content: {
+          "application/json": components["schemas"]["IpDetectionTimeResponse"];
         };
       };
     };
