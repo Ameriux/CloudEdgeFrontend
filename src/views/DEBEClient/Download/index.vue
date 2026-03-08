@@ -88,7 +88,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { ElMessageBox, ElMessage } from 'element-plus'
 import { useStore } from 'vuex'
 import { useRoute } from 'vue-router'
 import ClientWorkspace from '../../../components/ClientWorkspace.vue'
@@ -277,6 +277,14 @@ const singleFileData = computed({
         appendLog(`[${operationTime}] - ${file.filePath}\n`)
       })
 
+      // 显示下载中的提示
+      const loadingMessage = ElMessage({
+        message: '文件下载中，请稍候...',
+        type: 'info',
+        duration: 0,
+        showClose: true
+      })
+
       // 调用/download接口
       const filePaths = selectedFiles.value.map(file => file.filePath)
       fetch('/api-internal/download', {
@@ -319,8 +327,19 @@ const singleFileData = computed({
             operationTime: completionTime,
             fileCount: selectedFiles.value.length
           })
+          
+          // 关闭下载中提示
+          loadingMessage.close()
+          // 显示下载成功提示
+          ElMessage({
+            message: '文件下载成功',
+            type: 'success',
+            duration: 3000
+          })
         } else {
           appendLog(`[${completionTime}] 文件下载请求失败: ${data.message || '未知错误'}\n`)
+          // 关闭下载中提示
+          loadingMessage.close()
           // 显示下载失败提示框
           ElMessageBox.alert(
             `下载失败: ${data.message || '未知错误'}`,
@@ -341,6 +360,8 @@ const singleFileData = computed({
       .catch(error => {
         const completionTime = new Date().toLocaleString()
         appendLog(`[${completionTime}] 文件下载请求出错: ${error.message}\n`)
+        // 关闭下载中提示
+        loadingMessage.close()
         // 显示下载失败提示框
         ElMessageBox.alert(
           `下载失败: ${error.message}`,

@@ -26,6 +26,7 @@
                 v-model:value="lastEncryptionDelay"
                 title="文件加密延迟"
                 suffix="ms/MiB"
+                :precision="3"
               />
             </el-col>
             <el-col :span="6">
@@ -56,6 +57,7 @@
                 v-model:value="metaEncryptionDelay"
                 title="元数据加密延迟"
                 suffix="ms"
+                :precision="3"
               />
             </el-col>
             <el-col :span="6">
@@ -81,6 +83,7 @@
                 v-model:value="lastDecryptionDelay"
                 title="文件解密延迟"
                 suffix="ms/MiB"
+                :precision="3"
               />
 
             </el-col>
@@ -89,6 +92,7 @@
                 v-model:value="metaDecryptionDelay"
                 title="元数据解密延迟"
                 suffix="ms"
+                :precision="3"
               />
             </el-col>
           </el-row>

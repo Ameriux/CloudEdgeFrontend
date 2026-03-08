@@ -184,10 +184,12 @@ export default {
       state.totalDecryptionDelay = currentTotal;
       
       // 将解密延迟转换为 ms/MiB (1 ms = 1000 us, 1 MiB = 1024*1024 Byte)
-      // 解密时没有直接的文件大小差值，使用加密时的文件大小差值
-      if (deltaDecryptionDelay > 0 && state.encryptedSize > 0) {
+      // 使用累计的加密文件大小作为解密时的文件大小参考
+      if (deltaDecryptionDelay > 0 && state.totalEncryptedSize > 0) {
         // 延迟时间(us) -> ms，文件大小(Byte) -> MiB
-        state.lastDecryptionDelay = (deltaDecryptionDelay / 1000) / (state.encryptedSize / (1024 * 1024));
+        const decryptionDelayMsPerMiB = (deltaDecryptionDelay / 1000) / (state.totalEncryptedSize / (1024 * 1024));
+        // 保留3位小数
+        state.lastDecryptionDelay = parseFloat(decryptionDelayMsPerMiB.toFixed(3));
       } else {
         state.lastDecryptionDelay = 0;
       }
@@ -197,7 +199,12 @@ export default {
       const deltaMetaDecryptionDelay = currentMetaTotal - state.totalMetaDecryptionDelay;
       
       state.totalMetaDecryptionDelay = currentMetaTotal;
-      state.metaDecryptionDelay = deltaMetaDecryptionDelay > 0 ? deltaMetaDecryptionDelay : 0;
+      // 元数据解密延迟单位转换为 ms 并保留3位小数
+      const metaDecryptionDelayMs = (deltaMetaDecryptionDelay / 1000);
+      state.metaDecryptionDelay = parseFloat(metaDecryptionDelayMs.toFixed(3));
+      if (state.metaDecryptionDelay < 0) {
+        state.metaDecryptionDelay = 0;
+      }
       
       // 更新从云端读取时间
       state.cloudReadTime = data.cloudReadTime || 0;

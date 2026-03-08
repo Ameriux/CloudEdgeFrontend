@@ -538,7 +538,7 @@ const uploadFiles = () => {
     </div>
     <div style="margin: 15px 0;">
       <input type="checkbox" id="cloudBackup" style="margin-right: 8px;" onchange="window.cloudBackupChecked = this.checked">
-      <label for="cloudBackup">是否开启备份到云端功能</label>
+      <label for="cloudBackup">开启备份到云端功能</label>
     </div>
   `
   
