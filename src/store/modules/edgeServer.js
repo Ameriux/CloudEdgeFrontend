@@ -84,6 +84,13 @@ export default {
       
       state.totalEncryptionDelay = currentTotal;
       
+      // 计算并更新加密数据大小差值（需要在使用前定义）
+      const currentEncryptedTotal = data.logicalDataSize || 0;
+      const deltaEncryptedSize = currentEncryptedTotal - state.totalEncryptedSize;
+      
+      state.totalEncryptedSize = currentEncryptedTotal;
+      state.encryptedSize = deltaEncryptedSize > 0 ? deltaEncryptedSize : 0;
+      
       // 将加密延迟转换为 ms/MiB (1 ms = 1000 us, 1 MiB = 1024*1024 Byte)
       if (deltaEncryptionDelay > 0 && deltaEncryptedSize > 0) {
         // 延迟时间(us) -> ms，文件大小(Byte) -> MiB
@@ -98,13 +105,6 @@ export default {
       
       state.totalMetaEncryptionDelay = currentMetaTotal;
       state.metaEncryptionDelay = deltaMetaEncryptionDelay > 0 ? deltaMetaEncryptionDelay : 0;
-      
-      // 计算并更新加密数据大小差值
-      const currentEncryptedTotal = data.logicalDataSize || 0;
-      const deltaEncryptedSize = currentEncryptedTotal - state.totalEncryptedSize;
-      
-      state.totalEncryptedSize = currentEncryptedTotal;
-      state.encryptedSize = deltaEncryptedSize > 0 ? deltaEncryptedSize : 0;
       
       // 计算并更新数据缩减时间差值
       const currentReductionTotal = data.compressedTime || 0;

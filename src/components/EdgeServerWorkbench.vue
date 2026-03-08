@@ -708,26 +708,30 @@ export default defineComponent({
     
     // 存储开销相关变量
     const storageUsage = ref()
-    const fetchStorageUsage = async () => {
-      try{
-        console.log('正在获取存储开销数据...')
-        const response = await fetch('/api-internal/meta/data')
-        const data = await response.json()
-
-        console.log('获取到的原始数据:', data)
-        if (data.status === 'success' && data.total.rate) {
-          storageUsage.value = data.total.rate
-          console.log(`获取到的存储开销值: ${storageUsage.value}`)
+    const fetchStorageUsage = () => {
+      return fetch('/api-internal/meta/data')
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`存储开销接口响应错误: ${response.status}`)
+          }
+          return response.json()
+        })
+        .then(data => {
+          console.log('存储开销数据:', data)
+          if (data.status === 'success' && data.total.rate) {
+            storageUsage.value = data.total.rate
+            console.log(`获取到的存储开销值: ${storageUsage.value}`)
+            return storageUsage.value
+          }
+          // 如果没有获取到有效的rate值，使用默认值0
+          storageUsage.value = 0
           return storageUsage.value
-        }
-        // 如果没有获取到有效的rate值，使用默认值0
-        storageUsage.value = 0
-        return storageUsage.value
-      }catch (error) {
-        console.error('获取存储开销时出错:', error.message)
-        storageUsage.value = 0
-        return storageUsage.value
-      }
+        })
+        .catch(error => {
+          console.error('获取存储开销时出错:', error.message)
+          storageUsage.value = 0
+          return storageUsage.value
+        })
     }
 
     
@@ -1132,33 +1136,34 @@ export default defineComponent({
 
     // 从Vuex获取数据
     const lastEncryptionDelay = computed(() => store.state.edgeServer.lastEncryptionDelay)
-const totalEncryptionDelay = computed(() => store.state.edgeServer.totalEncryptionDelay / 1000)
-const metaEncryptionDelay = computed(() => store.state.edgeServer.metaEncryptionDelay / 1000)
+    const totalEncryptionDelay = computed(() => store.state.edgeServer.totalEncryptionDelay / 1000)
+    const metaEncryptionDelay = computed(() => store.state.edgeServer.metaEncryptionDelay / 1000)
     const encryptedSize = computed(() => store.state.edgeServer.encryptedSize / 1024 / 1024)
     const reductionTime = computed(() => store.state.edgeServer.reductionTime / 1000)
     const reducedSize = computed(() => store.state.edgeServer.reducedSize / 1024 / 1024)
     const dedupSize = computed(() => store.state.edgeServer.dedupSize / 1024 / 1024)
     const uniqueDataSize = computed(() => store.state.edgeServer.uniqueDataSize / 1024 / 1024)
     const lastDecryptionDelay = computed(() => store.state.edgeServer.lastDecryptionDelay)
-const totalDecryptionDelay = computed(() => store.state.edgeServer.totalDecryptionDelay / 1000)
-const metaDecryptionDelay = computed(() => store.state.edgeServer.metaDecryptionDelay / 1000)
+    const totalDecryptionDelay = computed(() => store.state.edgeServer.totalDecryptionDelay / 1000)
+    const metaDecryptionDelay = computed(() => store.state.edgeServer.metaDecryptionDelay / 1000)
     const cloudReadTime = computed(() => store.state.edgeServer.cloudReadTime)
+    
     // 过滤函数：排除特定后缀的文件（-enc, .enc, -enc-result）
-const filterExcludedSuffixes = (files) => {
-  if (!Array.isArray(files)) return [];
-  // 使用正则表达式匹配需要排除的后缀
-  const excludedPattern = /(-enc|\.enc|-enc-result|\.tar|\.enc-result)$/;
-  return files.filter(file => {
-    // 确保file和file.name存在
-    if (!file || !file.name) return true;
-    // 返回不匹配排除模式的文件
-    return !excludedPattern.test(file.name);
-  });
-};
+    const filterExcludedSuffixes = (files) => {
+      if (!Array.isArray(files)) return [];
+      // 使用正则表达式匹配需要排除的后缀
+      const excludedPattern = /(-enc|\.enc|-enc-result|\.tar|\.enc-result)$/;
+      return files.filter(file => {
+        // 确保file和file.name存在
+        if (!file || !file.name) return true;
+        // 返回不匹配排除模式的文件
+        return !excludedPattern.test(file.name);
+      });
+    };
 
-// 修改计算属性，添加过滤逻辑
-const containerData = computed(() => filterExcludedSuffixes(store.state.edgeServer.containerData))
-const fileRecipeData = computed(() => filterExcludedSuffixes(store.state.edgeServer.fileRecipeData))
+    // 修改计算属性，添加过滤逻辑
+    const containerData = computed(() => filterExcludedSuffixes(store.state.edgeServer.containerData))
+    const fileRecipeData = computed(() => filterExcludedSuffixes(store.state.edgeServer.fileRecipeData))
     const previousContainerData = computed(() => store.state.edgeServer.previousContainerData || [])
     const previousFileRecipeData = computed(() => store.state.edgeServer.previousFileRecipeData || [])
     const hasUploadEvent = computed(() => store.state.edgeServer.hasUploadEvent)
