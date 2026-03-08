@@ -160,6 +160,8 @@ const uploadedFilePaths = ref([])
 const tableHeight = ref('300px')
 // 使用ref来存储选择的EdgeServer
 const selectedEdgeServer = ref('')
+// 备份到云端功能控制
+const enableCloudBackup = ref(false)
 
 // 从Vuex获取EdgeServer数据
 const getSelectedEdgeServerFromStore = () => {
@@ -526,13 +528,40 @@ const uploadFiles = () => {
   }
 
   // 显示确认对话框
+  let cloudBackupChecked = false;
+  const dialogContent = `
+    <div style="margin-bottom: 20px;">
+      <p>确认上传以下文件？</p>
+      <ul style="margin: 10px 0; padding-left: 20px;">
+        ${previewFiles.value.map(file => `<li>${file.name}</li>`).join('')}
+      </ul>
+    </div>
+    <div style="margin: 15px 0;">
+      <input type="checkbox" id="cloudBackup" style="margin-right: 8px;" onchange="window.cloudBackupChecked = this.checked">
+      <label for="cloudBackup">是否开启备份到云端功能</label>
+    </div>
+  `
+  
+  // 暴露变量到全局，供复选框使用
+  window.cloudBackupChecked = false;
+  
   ElMessageBox.confirm(
-    '确认上传以下文件？\n' + previewFiles.value.map(file => file.name).join('\n'),
+    dialogContent,
     '上传确认',
     {
       confirmButtonText: '确认',
       cancelButtonText: '取消',
-      type: 'warning'
+      type: 'warning',
+      dangerouslyUseHTMLString: true,
+      beforeClose: (action, instance, done) => {
+        if (action === 'confirm') {
+          // 获取复选框状态
+          enableCloudBackup.value = window.cloudBackupChecked || false;
+        }
+        // 清理全局变量
+        delete window.cloudBackupChecked;
+        done();
+      }
     }
   ).then(() => {
     // 调用上传接口
@@ -540,6 +569,8 @@ const uploadFiles = () => {
     isUploading.value = true
     uploadToServer();
   }).catch(() => {
+    // 清理全局变量
+    delete window.cloudBackupChecked;
     appendLog('已取消上传\n')
   })
 }
@@ -582,7 +613,10 @@ const uploadToServer = () => {
 
   // 添加选择的EdgeServer IP地址（从父组件header中获取）
   uploadData.edgeServerIp = selectedEdgeServer.value;
+  // 添加备份到云端功能（以字符串形式发送）
+  uploadData.migrate = enableCloudBackup.value ? "true" : "false";
   appendLog(`选择的EdgeServer: ${selectedEdgeServer.value || '未选择'}\n`);
+  appendLog(`备份到云端: ${enableCloudBackup.value ? '开启' : '关闭'}\n`);
 
   // 调试日志：打印上传数据
   appendLog('上传数据: ' + JSON.stringify(uploadData) + '\n');
