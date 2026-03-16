@@ -153,9 +153,9 @@ export default defineComponent({
     const containerData = computed(() => store.getters['cloudServer/getAllData'].containerData)
     const fileRecipeData = computed(() => store.getters['cloudServer/getAllData'].fileRecipeData)
     const inputDataSize = computed(() => (store.getters['cloudServer/getAllData'].inputDataSize / 1024 / 1024).toFixed(4))
-    const redundancyReductionTime = computed(() => store.getters['cloudServer/getAllData'].redundancyReductionTime )  // dedup_time
+    const redundancyReductionTime = computed(() => store.getters['cloudServer/getAllData'].redundancyReductionTime * 1000 )  // dedup_time
     const actualStorageSize = computed(() => (store.getters['cloudServer/getAllData'].actualStorageSize / 1024 / 1024).toFixed(4))  // store_data_size
-    const backupSyncDelay = computed(() => store.getters['cloudServer/getAllData'].backupSyncDelay)  // migration_time
+    const backupSyncDelay = computed(() => (store.getters['cloudServer/getAllData'].backupSyncDelay / inputDataSize.value).toFixed(4))  // migration_time
     const dedupSize = computed(() => (store.getters['cloudServer/getAllData'].dedupSize / 1024 / 1024).toFixed(4))
     const fullLogContent = computed(() => store.getters['cloudServer/getAllData'].fullLogContent)
 
@@ -314,11 +314,11 @@ export default defineComponent({
               
               // 额外添加数据更新日志到控制台
               console.log('\n===== 数据更新状态 =====');
-              console.log('传入数据大小:', inputDataSize.value, 'B');
+              console.log('传入数据大小:', inputDataSize.value, 'MB');
               console.log('冗余数据缩减时间:', redundancyReductionTime.value, 'ms');
-              console.log('实际存储数据大小:', actualStorageSize.value, 'KB');
-              console.log('单边缘备份同步延迟:', backupSyncDelay.value, 'ms');
-              console.log('去重数据量:', dedupSize.value, 'KB');
+              console.log('实际存储数据大小:', actualStorageSize.value, 'MB');
+              console.log('单边缘备份同步延迟:', backupSyncDelay.value, 'ms/MiB');
+              console.log('去重数据量:', dedupSize.value, 'MB');
               console.log('容器数据数量:', containerData.value.length, '条');
               console.log('文件配方数据数量:', fileRecipeData.value.length, '条');
               console.log('========================');

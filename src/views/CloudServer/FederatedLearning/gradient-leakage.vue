@@ -133,9 +133,6 @@
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 
-// 导入图片资源
-import tightMosaicImage from '@/assets/TightMosaic_DP_eps.png';
-
 // 响应式数据
 const isTesting = ref(false)
 const hasResults = ref(false)
@@ -143,13 +140,7 @@ const errorMessage = ref('')
 const isLoadingResults = ref(false)
 const fileContent = ref('')
 const resultImagePath = ref('')
-
-const resultImageUrl = computed(() => {
-  // 使用导入的图片资源
-  const url = tightMosaicImage + '?' + new Date().getTime();
-  console.log('生成图片URL:', url);
-  return url;
-})
+const resultImageUrl = ref('')
 
 // 运行梯度泄露防御测试
 const runDefenseTest = async () => {
@@ -175,7 +166,10 @@ const runDefenseTest = async () => {
     ElMessage.success('梯度泄露防御测试已完成')
     
     // 设置图片路径
-    resultImagePath.value = 'TightMosaic_DP_eps.png'
+    resultImagePath.value = '/home/cluster/ZZX/CloudEdgeFrontend/src/assets/TightMosaic_DP_eps.png'
+    // 动态生成图片URL，使用import.meta.url确保正确路径，添加时间戳确保每次加载最新图片
+    const imageUrl = new URL('@/assets/TightMosaic_DP_eps.png', import.meta.url).href;
+    resultImageUrl.value = imageUrl + '?' + new Date().getTime();
     console.log('设置图片路径:', resultImagePath.value)
     console.log('图片URL:', resultImageUrl.value)
     
@@ -186,13 +180,6 @@ const runDefenseTest = async () => {
     console.error('测试失败:', error)
     errorMessage.value = error.message || '测试过程中出现错误'
     ElMessage.error(`测试失败: ${errorMessage.value}`)
-    
-    // 即使API调用失败也显示模拟结果，提升用户体验
-    setTimeout(() => {
-      loadTestResults()
-      // 设置模拟的图片路径
-      resultImagePath.value = 'TightMosaic_DP_eps.png'
-    }, 1000)
   } finally {
     isTesting.value = false
   }

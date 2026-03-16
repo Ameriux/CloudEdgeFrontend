@@ -528,7 +528,6 @@ const uploadFiles = () => {
   }
 
   // 显示确认对话框
-  let cloudBackupChecked = false;
   const dialogContent = `
     <div style="margin-bottom: 20px;">
       <p>确认上传以下文件？</p>
@@ -537,13 +536,10 @@ const uploadFiles = () => {
       </ul>
     </div>
     <div style="margin: 15px 0;">
-      <input type="checkbox" id="cloudBackup" style="margin-right: 8px;" onchange="window.cloudBackupChecked = this.checked">
+      <input type="checkbox" id="cloudBackup" style="margin-right: 8px;">
       <label for="cloudBackup">开启备份到云端功能</label>
     </div>
   `
-  
-  // 暴露变量到全局，供复选框使用
-  window.cloudBackupChecked = false;
   
   ElMessageBox.confirm(
     dialogContent,
@@ -554,16 +550,18 @@ const uploadFiles = () => {
       type: 'warning',
       dangerouslyUseHTMLString: true,
       beforeClose: (action, instance, done) => {
+        console.log('beforeClose 被调用，action:', action);
         if (action === 'confirm') {
-          // 获取复选框状态
-          enableCloudBackup.value = window.cloudBackupChecked || false;
+          // 直接从 DOM 中获取复选框状态
+          const checkbox = document.getElementById('cloudBackup');
+          enableCloudBackup.value = checkbox ? checkbox.checked : false;
+          console.log('复选框状态:', enableCloudBackup.value);
         }
-        // 清理全局变量
-        delete window.cloudBackupChecked;
         done();
       }
     }
   ).then(() => {
+    console.log('用户点击了确认，enableCloudBackup.value:', enableCloudBackup.value);
     // 调用上传接口
     appendLog('开始上传文件...\n')
     isUploading.value = true
@@ -613,10 +611,16 @@ const uploadToServer = () => {
 
   // 添加选择的EdgeServer IP地址（从父组件header中获取）
   uploadData.edgeServerIp = selectedEdgeServer.value;
-  // 添加备份到云端功能（以字符串形式发送）
+  
+  // 添加备份到云端功能（以字符串形式发送，后端需要 "true" 或 "false"）
   uploadData.migrate = enableCloudBackup.value ? "true" : "false";
+  
   appendLog(`选择的EdgeServer: ${selectedEdgeServer.value || '未选择'}\n`);
   appendLog(`备份到云端: ${enableCloudBackup.value ? '开启' : '关闭'}\n`);
+  console.log(`备份到云端: ${enableCloudBackup.value ? '开启' : '关闭'}\n`);
+  console.log('enableCloudBackup.value 的值:', enableCloudBackup.value);
+  console.log('uploadData.migrate 的值:', uploadData.migrate);
+  console.log('完整的 uploadData:', JSON.stringify(uploadData));
 
   // 调试日志：打印上传数据
   appendLog('上传数据: ' + JSON.stringify(uploadData) + '\n');
@@ -630,7 +634,19 @@ const uploadToServer = () => {
     },
     body: JSON.stringify(uploadData)
   })
-    .then(response => response.json())
+    .then(response => {
+      console.log('响应状态:', response.status, response.statusText);
+      // 先获取文本，再尝试解析为 JSON
+      return response.text().then(text => {
+        console.log('响应原始文本:', text);
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          console.error('JSON 解析失败，原始响应:', text);
+          throw new Error(`服务器返回非JSON格式: ${text.substring(0, 100)}`);
+        }
+      });
+    })
     .then(data => {
       isUploading.value = false
       console.log('文件上传接口响应:', data);

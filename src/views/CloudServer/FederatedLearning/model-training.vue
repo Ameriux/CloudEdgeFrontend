@@ -74,11 +74,11 @@
                 <el-form-item label="参与 Edge 选择" class="form-item-half">
                   <el-select v-model="imageParams.edge" placeholder="选择参与模型训练的 Edge" multiple @change="handleEdgeSelectChange($event, imageParams)">
                     <el-option label="全选" value="all" />
-                    <el-option label="EdgeServer-node5" value="EdgeServer-node5" />
-                    <el-option label="EdgeServer-node6" value="EdgeServer-node6" />
-                    <el-option label="EdgeServer-node7" value="EdgeServer-node7" />
-                    <el-option label="EdgeServer-node8" value="EdgeServer-node8" />
-                    <el-option label="EdgeServer-node9" value="EdgeServer-node9" />
+                    <el-option label="Edge0" value="EdgeServer-node5" />
+                    <el-option label="Edge1" value="EdgeServer-node6" />
+                    <el-option label="Edge2" value="EdgeServer-node7" />
+                    <el-option label="Edge3" value="EdgeServer-node8" />
+                    <el-option label="Edge4" value="EdgeServer-node9" />
                   </el-select>
                 </el-form-item>
               </div>
@@ -147,11 +147,11 @@
                 <el-form-item label="参与 Edge 选择" class="form-item-half">
                   <el-select v-model="mnistParams.edge" placeholder="选择参与模型训练的 Edge" multiple @change="handleEdgeSelectChange($event, mnistParams)">
                     <el-option label="全选" value="all" />
-                    <el-option label="EdgeServer-node5" value="EdgeServer-node5" />
-                    <el-option label="EdgeServer-node6" value="EdgeServer-node6" />
-                    <el-option label="EdgeServer-node7" value="EdgeServer-node7" />
-                    <el-option label="EdgeServer-node8" value="EdgeServer-node8" />
-                    <el-option label="EdgeServer-node9" value="EdgeServer-node9" />
+                    <el-option label="Edge0" value="EdgeServer-node5" />
+                    <el-option label="Edge1" value="EdgeServer-node6" />
+                    <el-option label="Edge2" value="EdgeServer-node7" />
+                    <el-option label="Edge3" value="EdgeServer-node8" />
+                    <el-option label="Edge4" value="EdgeServer-node9" />
                   </el-select>
                 </el-form-item>
               </div>
@@ -221,11 +221,11 @@
                 <el-form-item label="参与 Edge 选择" class="form-item-half">
                   <el-select v-model="transportParams.edge" placeholder="选择参与模型训练的 Edge" multiple @change="handleEdgeSelectChange($event, transportParams)">
                     <el-option label="全选" value="all" />
-                    <el-option label="EdgeServer-node5" value="EdgeServer-node5" />
-                    <el-option label="EdgeServer-node6" value="EdgeServer-node6" />
-                    <el-option label="EdgeServer-node7" value="EdgeServer-node7" />
-                    <el-option label="EdgeServer-node8" value="EdgeServer-node8" />
-                    <el-option label="EdgeServer-node9" value="EdgeServer-node9" />
+                    <el-option label="Edge0" value="EdgeServer-node5" />
+                    <el-option label="Edge1" value="EdgeServer-node6" />
+                    <el-option label="Edge2" value="EdgeServer-node7" />
+                    <el-option label="Edge3" value="EdgeServer-node8" />
+                    <el-option label="Edge4" value="EdgeServer-node9" />
                   </el-select>
                 </el-form-item>
               </div>
@@ -293,11 +293,11 @@
                 <el-form-item label="参与 Edge 选择" class="form-item-half">
                   <el-select v-model="logParams.edge" placeholder="选择参与模型训练的 Edge" multiple @change="handleEdgeSelectChange($event, logParams)">
                     <el-option label="全选" value="all" />
-                    <el-option label="EdgeServer-node5" value="EdgeServer-node5" />
-                    <el-option label="EdgeServer-node6" value="EdgeServer-node6" />
-                    <el-option label="EdgeServer-node7" value="EdgeServer-node7" />
-                    <el-option label="EdgeServer-node8" value="EdgeServer-node8" />
-                    <el-option label="EdgeServer-node9" value="EdgeServer-node9" />
+                    <el-option label="Edge0" value="EdgeServer-node5" />
+                    <el-option label="Edge1" value="EdgeServer-node6" />
+                    <el-option label="Edge2" value="EdgeServer-node7" />
+                    <el-option label="Edge3" value="EdgeServer-node8" />
+                    <el-option label="Edge4" value="EdgeServer-node9" />
                   </el-select>
                 </el-form-item>
               </div>

@@ -61,6 +61,35 @@
       <el-table-column prop="hash" label="文件哈希" width="280" />
       <el-table-column prop="size" label="文件大小" width="120" />
     </el-table>
+    
+    <!-- 算法选择 -->
+    <div style="margin: 20px 0; padding: 15px; background-color: #f5f7fa; border-radius: 4px;">
+      <h4 style="margin-bottom: 15px; font-size: 14px; font-weight: bold;">选择算法</h4>
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="数据块指纹算法" style="margin-bottom: 10px;">
+            <el-select v-model="hashAlgorithm" placeholder="请选择算法" style="width: 100%;">
+              <el-option label="SHA_1" value="SHA_1"></el-option>
+              <el-option label="SHA_256" value="SHA_256"></el-option>
+              <el-option label="MD5" value="MD5"></el-option>
+              <el-option label="SM3" value="SM3"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="文件加解密算法" style="margin-bottom: 10px;">
+            <el-select v-model="encryptionAlgorithm" placeholder="请选择算法" style="width: 100%;">
+              <el-option label="AES_128_CFB" value="AES_128_CFB"></el-option>
+              <el-option label="AES_128_GCM" value="AES_128_GCM"></el-option>
+              <el-option label="AES_256_CFB" value="AES_256_CFB"></el-option>
+              <el-option label="AES_256_GCM" value="AES_256_GCM"></el-option>
+              <el-option label="SM4" value="SM4"></el-option>
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </div>
+    
     <template #footer>
       <span class="dialog-footer">
         <el-button @click="cancelSelection">取消</el-button>
@@ -137,6 +166,8 @@ const initClientData = () => {
 // 响应式数据
 const dialogVisible = ref(false)
 const selectedFiles = ref([])
+const hashAlgorithm = ref('SM3') // 数据块指纹算法，默认SM3
+const encryptionAlgorithm = ref('SM4') // 文件加解密算法，默认SM4
 const confirmDialogVisible = ref(false)
 const uploadedFiles = ref([])
 const tableHeight = ref(300)
@@ -292,7 +323,11 @@ const singleFileData = computed({
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ inputFile: filePaths[0] })  // 只传递第一个选中的文件路径，确保是字符串
+        body: JSON.stringify({ 
+          inputFile: filePaths[0],  // 只传递第一个选中的文件路径，确保是字符串
+          HASH_TYPE: hashAlgorithm.value,
+          CIPHER_TYPE: encryptionAlgorithm.value
+        })
       })
       .then(response => {
         // 检查响应状态
