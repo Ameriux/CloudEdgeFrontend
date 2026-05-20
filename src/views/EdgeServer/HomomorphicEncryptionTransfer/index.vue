@@ -91,6 +91,7 @@
 
 <script>
 import { mapState, mapGetters, mapActions } from 'vuex';
+import { ElMessage } from 'element-plus';
 
 export default {
   name: 'HomomorphicEncryptionTransfer',
@@ -181,7 +182,7 @@ export default {
         if (data && data.result && Array.isArray(data.result)) {
           // 保存结果到Vuex
           this.saveEncryptionResult(data);
-          this.$message({
+          ElMessage({
             message: '同态加密成功',
             type: 'success'
           });
@@ -191,7 +192,7 @@ export default {
       })
       .catch(error => {
         console.error('Error performing homomorphic encryption:', error);
-        this.$message({
+        ElMessage({
           message: '同态加密失败: ' + error.message,
           type: 'error'
         });
@@ -206,7 +207,7 @@ export default {
     validateInputs() {
       // 检查p1和p2是否为空
       if (!this.p1 || !this.p2) {
-        this.$message({
+        ElMessage({
           message: '请输入完整的整数序列',
           type: 'warning'
         });
@@ -220,7 +221,7 @@ export default {
       // 检查是否所有元素都是数字
       const allNumbers = [...p1Numbers, ...p2Numbers].every(num => !isNaN(num) && isFinite(num));
       if (!allNumbers) {
-        this.$message({
+        ElMessage({
           message: '请输入有效的整数序列，仅包含数字和逗号',
           type: 'warning'
         });
@@ -229,7 +230,7 @@ export default {
       
       // 检查p1和p2的长度是否一致
       if (p1Numbers.length !== p2Numbers.length) {
-        this.$message({
+        ElMessage({
           message: 'p1和p2的整数序列长度必须一致',
           type: 'warning'
         });

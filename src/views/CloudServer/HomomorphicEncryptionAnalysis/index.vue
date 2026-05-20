@@ -254,14 +254,14 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
-import homoData from '@/assets/homo.json';
+import { ElMessage } from 'element-plus';
 
 export default {
   name: 'HomomorphicEncryptionAnalysis',
   data() {
     return {
       showLogIdDropdown: false, // 下拉菜单状态保留在本地
-      homoRecord: homoData.view_records.find(record => record.id === 1)
+      homoRecord: null
     };
   },
   
@@ -285,8 +285,14 @@ export default {
     ])
   },
   
-  mounted() {
+  async mounted() {
     this.fetchDatabaseData();
+    try {
+      const homoData = await import('@/assets/homo.json');
+      this.homoRecord = homoData.default.view_records.find(record => record.id === 1);
+    } catch (e) {
+      console.error('加载homo.json失败:', e);
+    }
   },
   methods: {
     ...mapActions('homomorphicEncryption', [
@@ -303,10 +309,10 @@ export default {
     validateLogId(logId) {
       const maxLimit = this.maxLogId || 21;
       if (logId < 1) {
-        this.$message.warning('日志条数不能少于1');
+        ElMessage.warning('日志条数不能少于1');
         return 1;
       } else if (logId > maxLimit) {
-        this.$message.warning(`日志条数不能超过${maxLimit}`);
+        ElMessage.warning(`日志条数不能超过${maxLimit}`);
         return maxLimit;
       }
       return logId;
@@ -394,33 +400,47 @@ export default {
       }, 100);
     },
     
+    escapeHtml(text) {
+      if (!text && text !== 0 && text !== false) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    },
+
     formatFieldValue(field, fieldName) {
       if (!field && field !== 0 && field !== false) return '-';
-      
+
       const cipherFields = ['disk_speed_per', 'cpu', 'gpu', 'pass_failed', 'authorization', 'transgression_number', 'up_traffic', 'down_traffic', 'svm_cipher', 'AES_text'];
       const isCiphertext = cipherFields.includes(fieldName) && typeof field === 'string';
-      
+
       if (isCiphertext) {
         const size = this.formatFieldSize(field);
-        const displayText = field.length > 20 ? `${field.substring(0, 20)}...` : field;
+        const rawDisplay = field.length > 20 ? `${field.substring(0, 20)}...` : field;
+        const displayText = this.escapeHtml(rawDisplay);
         // 使用随机ID作为加载状态的标识
         const loadingKey = `${fieldName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const isLoading = this.cipherLoading[loadingKey];
+        const escapedFieldName = this.escapeHtml(fieldName);
+        const escapedField = this.escapeHtml(field);
+        const escapedSize = this.escapeHtml(size);
         return `<span class="cipher-field">
           <span class="cipher-preview">${displayText}</span>
-          <button class="view-cipher-btn" 
-                  data-fieldname="${fieldName.replace(/'/g, "\\'")}" 
-                  data-fieldvalue="${field.replace(/'/g, "\\'")}" 
-                  data-fieldsize="${size}"
+          <button class="view-cipher-btn"
+                  data-fieldname="${escapedFieldName}"
+                  data-fieldvalue="${escapedField}"
+                  data-fieldsize="${escapedSize}"
                   data-loading-key="${loadingKey}"
-                  disabled="${isLoading}"
+                  ${isLoading ? 'disabled' : ''}
                   style="margin-left: 8px; padding: 4px 8px; font-size: 12px; background: #409EFF; color: white; border: none; border-radius: 4px; cursor: ${isLoading ? 'not-allowed' : 'pointer'}; opacity: ${isLoading ? '0.8' : '1'};">
             ${isLoading ? '<span class="spinner-small"></span> 加载中...' : '查看内容'}
           </button>
-          <span class="cipher-size" style="margin-left: 5px; font-size: 12px; color: #999;">(${size})</span>
+          <span class="cipher-size" style="margin-left: 5px; font-size: 12px; color: #999;">(${escapedSize})</span>
         </span>`;
       } else {
-        return field;
+        return this.escapeHtml(field);
       }
     },
     
@@ -465,7 +485,7 @@ export default {
     // 处理数据分析
     handleDataAnalysis() {
       if (!this.userId) {
-        this.$message.warning('请先选择Edge ID');
+        ElMessage.warning('请先选择Edge ID');
         return;
       }
       
@@ -478,12 +498,12 @@ export default {
         logId: this.logId
       }).then(data => {
         if (data && data.status === 'success') {
-          this.$message.success('密文数据分析成功');
+          ElMessage.success('密文数据分析成功');
         } else {
-          this.$message.error('密文数据分析失败：' + (data?.message || '未知错误'));
+          ElMessage.error('密文数据分析失败：' + (data?.message || '未知错误'));
         }
       }).catch(error => {
-        this.$message.error('密文数据分析失败：' + error.message);
+        ElMessage.error('密文数据分析失败：' + error.message);
       });
     }
   }

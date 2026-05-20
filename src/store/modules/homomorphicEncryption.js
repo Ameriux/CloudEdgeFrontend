@@ -166,7 +166,7 @@ const mutations = {
   },
   
   SET_CIPHER_LOADING(state, { key, loading }) {
-    Vue.set(state.analysisState.cipherLoading, key, loading);
+    state.analysisState.cipherLoading = { ...state.analysisState.cipherLoading, [key]: loading };
   },
   
   SET_SHOW_CIPHER_MODAL(state, show) {

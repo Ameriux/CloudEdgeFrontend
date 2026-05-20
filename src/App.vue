@@ -95,7 +95,7 @@
             
 
           </el-sub-menu>
-          <el-sub-menu index="edgeserver">
+          <el-sub-menu index="/edgeserver">
             <template #title>
               <i class="el-icon-server"></i><span>EdgeServer</span>
             </template>
@@ -114,8 +114,7 @@
               <el-menu-item
                 v-for="server in edgeServers"
                 :key="server.id"
-                :index="`3-3-${server.id}`"
-                @click="$router.push(`/edgeserver/workspace/${server.id}`)"
+                :index="`/edgeserver/workspace/${server.id}`"
               >
                 {{ server.deviceName }}
               </el-menu-item>
