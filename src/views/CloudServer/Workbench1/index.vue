@@ -39,7 +39,7 @@
             <el-statistic
               v-model:value="backupSyncDelay"
               title="单边缘备份同步延迟"
-              suffix="ms/MiB"
+              suffix="ms/MB"
             />
           </el-col>
         </el-row>
@@ -317,7 +317,7 @@ export default defineComponent({
               console.log('传入数据大小:', inputDataSize.value, 'MB');
               console.log('冗余数据缩减时间:', redundancyReductionTime.value, 'ms');
               console.log('实际存储数据大小:', actualStorageSize.value, 'MB');
-              console.log('单边缘备份同步延迟:', backupSyncDelay.value, 'ms/MiB');
+              console.log('单边缘备份同步延迟:', backupSyncDelay.value, 'ms/MB');
               console.log('去重数据量:', dedupSize.value, 'MB');
               console.log('容器数据数量:', containerData.value.length, '条');
               console.log('文件配方数据数量:', fileRecipeData.value.length, '条');

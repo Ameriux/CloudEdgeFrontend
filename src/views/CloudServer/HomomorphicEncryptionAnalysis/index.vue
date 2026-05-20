@@ -121,7 +121,74 @@
         </div>
       </div>
       
-      <div class="analysis-form-container">
+     
+        
+        <!-- Homo.json 数据展示 -->
+        <div class="homo-data-section" v-if="homoRecord">
+          <h3>同态加密数据详情 (ID: {{ homoRecord.id }})</h3>
+          <div class="homo-data-list">
+            <div class="homo-data-item">
+              <span class="homo-data-label">Edge ID:</span>
+              <span class="homo-data-value">{{ homoRecord.user_id }}</span>
+            </div>
+            <div class="homo-data-item">
+              <span class="homo-data-label">Disk Speed Per:</span>
+              <span class="homo-data-value">...{{ homoRecord.disk_speed_per.substring(18, 400) }}...</span>
+              <span class="homo-data-size">({{ homoRecord.disk_speed_per.length }} bytes)</span>
+            </div>
+            <div class="homo-data-item">
+              <span class="homo-data-label">CPU:</span>
+              <span class="homo-data-value">...{{ homoRecord.cpu.substring(18, 400) }}...</span>
+              <span class="homo-data-size">({{ homoRecord.cpu.length }} bytes)</span>
+            </div>
+            <div class="homo-data-item">
+              <span class="homo-data-label">GPU:</span>
+              <span class="homo-data-value">...{{ homoRecord.gpu.substring(18, 400) }}...</span>
+              <span class="homo-data-size">({{ homoRecord.gpu.length }} bytes)</span>
+            </div>
+            <div class="homo-data-item">
+              <span class="homo-data-label">Pass Failed:</span>
+              <span class="homo-data-value">...{{ homoRecord.pass_failed.substring(18, 400) }}...</span>
+              <span class="homo-data-size">({{ homoRecord.pass_failed.length }} bytes)</span>
+            </div>
+            <div class="homo-data-item">
+              <span class="homo-data-label">Authorization:</span>
+              <span class="homo-data-value">...{{ homoRecord.authorization.substring(18, 400) }}...</span>
+              <span class="homo-data-size">({{ homoRecord.authorization.length }} bytes)</span>
+            </div>
+            <div class="homo-data-item">
+              <span class="homo-data-label">Transgression Number:</span>
+              <span class="homo-data-value">...{{ homoRecord.transgression_number.substring(18, 400) }}...</span>
+              <span class="homo-data-size">({{ homoRecord.transgression_number.length }} bytes)</span>
+            </div>
+            <div class="homo-data-item">
+              <span class="homo-data-label">Up Traffic:</span>
+              <span class="homo-data-value">...{{ homoRecord.up_traffic.substring(18, 400) }}...</span>
+              <span class="homo-data-size">({{ homoRecord.up_traffic.length }} bytes)</span>
+            </div>
+            <div class="homo-data-item">
+              <span class="homo-data-label">Down Traffic:</span>
+              <span class="homo-data-value">...{{ homoRecord.down_traffic.substring(18, 400) }}...</span>
+              <span class="homo-data-size">({{ homoRecord.down_traffic.length }} bytes)</span>
+            </div>
+            <div class="homo-data-item">
+              <span class="homo-data-label">SVM Cipher:</span>
+              <span class="homo-data-value">...{{ homoRecord.svm_cipher.substring(18, 400) }}...</span>
+              <span class="homo-data-size">({{ homoRecord.svm_cipher.length }} bytes)</span>
+            </div>
+            <div class="homo-data-item">
+              <span class="homo-data-label">AES Text:</span>
+              <span class="homo-data-value">{{ homoRecord.AES_text }}</span>
+              <span class="homo-data-size">({{ homoRecord.AES_text.length }} bytes)</span>
+            </div>
+            <div class="homo-data-item">
+              <span class="homo-data-label">Created At:</span>
+              <span class="homo-data-value">{{ homoRecord.created_at }}</span>
+            </div>
+          </div>
+        </div>
+        
+         <div class="analysis-form-container">
         <div class="analysis-inputs">
           <div class="form-group">
             <label>Edge ID：</label>
@@ -168,7 +235,6 @@
             </div>
           </div>
         </div>
-        
         <button @click="handleDataAnalysis" class="btn-primary" :disabled="analysisLoading">
           <span v-if="!analysisLoading">进行分析</span>
           <span v-else class="loading-spinner">
@@ -188,12 +254,14 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
+import homoData from '@/assets/homo.json';
 
 export default {
   name: 'HomomorphicEncryptionAnalysis',
   data() {
     return {
-      showLogIdDropdown: false // 下拉菜单状态保留在本地
+      showLogIdDropdown: false, // 下拉菜单状态保留在本地
+      homoRecord: homoData.view_records.find(record => record.id === 1)
     };
   },
   
@@ -948,5 +1016,56 @@ h3 {
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.5;
+}
+
+/* Homo.json 数据展示样式 */
+.homo-data-section {
+  margin: 20px 0;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 6px;
+  border: 1px solid #ebeef5;
+}
+
+.homo-data-section h3 {
+  margin-bottom: 16px;
+  color: #606266;
+  font-size: 18px;
+}
+
+.homo-data-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.homo-data-item {
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #ebeef5;
+}
+
+.homo-data-label {
+  font-weight: bold;
+  color: #606266;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.homo-data-value {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  color: #303133;
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.homo-data-size {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
 }
 </style>

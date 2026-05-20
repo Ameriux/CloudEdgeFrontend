@@ -25,7 +25,7 @@
               <el-statistic
                 v-model:value="lastEncryptionDelay"
                 title="文件加密延迟"
-                suffix="ms/MiB"
+                suffix="ms/MB"
                 :precision="3"
               />
             </el-col>
@@ -82,7 +82,7 @@
               <el-statistic
                 v-model:value="lastDecryptionDelay"
                 title="文件解密延迟"
-                suffix="ms/MiB"
+                suffix="ms/MB"
                 :precision="3"
               />
 
@@ -1502,13 +1502,13 @@ export default defineComponent({
 
           // 额外添加数据更新日志到控制台（直接从store获取数据）
           console.log('\n===== 数据更新状态 =====');
-          console.log('加密延迟(本次):', store.state.edgeServer.lastEncryptionDelay, 'ms/MiB');
+          console.log('加密延迟(本次):', store.state.edgeServer.lastEncryptionDelay, 'ms/MB');
           console.log('元数据加密延迟(本次):', store.state.edgeServer.metaEncryptionDelay, 'us');
           console.log('加密后数据大小(本次):', store.state.edgeServer.encryptedSize, 'B');
           console.log('数据冗余缩减时间(本次):', store.state.edgeServer.reductionTime, 'us');
           console.log('冗余缩减后数据大小(本次):', store.state.edgeServer.reducedSize, 'B');
           console.log('去重数据量(本次):', store.state.edgeServer.dedupSize, 'B');
-          console.log('解密延迟(本次):', store.state.edgeServer.lastDecryptionDelay, 'ms/MiB');
+          console.log('解密延迟(本次):', store.state.edgeServer.lastDecryptionDelay, 'ms/MB');
           console.log('元数据解密延迟(本次):', store.state.edgeServer.metaDecryptionDelay, 'us');
           console.log('从云端读取时间:', store.state.edgeServer.cloudReadTime, 'us');
           console.log('容器数据数量:', containerInfo.length, '条');
