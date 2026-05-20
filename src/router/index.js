@@ -24,6 +24,7 @@ import HomomorphicEncryptionAnalysis from '../views/CloudServer/HomomorphicEncry
 import FederatedLearning from '../views/CloudServer/FederatedLearning/index.vue'
 import ModelTraining from '../views/CloudServer/FederatedLearning/model-training.vue'
 import GradientLeakage from '../views/CloudServer/FederatedLearning/gradient-leakage.vue'
+import LogDataset from '../views/CloudServer/FederatedLearning/log-dataset.vue'
 // import HomomorphicEncryption from '../views/同态加密/index.vue'
 
 const routes = [
@@ -168,6 +169,11 @@ const routes = [
     path: '/cloudserver/federated-learning/gradient-leakage',
     name: 'gradient-leakage',
     component: GradientLeakage
+  },
+  {
+    path: '/cloudserver/federated-learning/log-dataset',
+    name: 'log-dataset',
+    component: LogDataset
   },
   {
     path: '/edgeserver/homomorphic-encryption-transfer',

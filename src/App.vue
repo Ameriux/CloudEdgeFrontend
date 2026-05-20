@@ -146,6 +146,9 @@
               <el-menu-item index="/cloudserver/federated-learning/gradient-leakage"
                 >梯度泄露防御</el-menu-item
               >
+              <el-menu-item index="/cloudserver/federated-learning/log-dataset"
+                >日志数据集</el-menu-item
+              >
             </el-sub-menu>
           </el-sub-menu>
         </el-menu>
