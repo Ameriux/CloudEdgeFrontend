@@ -1,9 +1,38 @@
 <template>
   <div class="app-container">
-    <!-- 顶部标题 -->
+    <!-- 顶部导航栏 -->
     <header class="header">
-      <div class="header-content">
-        <h1>云边融合存储系统展示平台</h1>
+      <div class="header-left">
+        <div class="header-logo">
+          <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="8" fill="url(#logo-grad)"/>
+            <path d="M10 22V14L16 10L22 14V22L16 26L10 22Z" stroke="white" stroke-width="1.5" fill="none"/>
+            <circle cx="16" cy="18" r="3" fill="white" opacity="0.9"/>
+            <path d="M16 10V12M16 24V26M10 18H8M24 18H26" stroke="white" stroke-width="1.2" opacity="0.6"/>
+            <defs>
+              <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32">
+                <stop offset="0%" stop-color="#3B82F6"/>
+                <stop offset="100%" stop-color="#1E40AF"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="header-title-group">
+          <span class="header-brand">云边融合的安全存储系统</span>
+          <span class="header-subtitle">CloudEdge System</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div v-if="isLoggedIn && userInfo" class="header-user">
+          <el-avatar :size="32" class="user-avatar">
+            {{ (userInfo.username || 'U')[0].toUpperCase() }}
+          </el-avatar>
+          <span class="user-name">{{ userInfo.username }}</span>
+        </div>
+        <div v-else class="header-status">
+          <span class="status-dot"></span>
+          <span class="status-text">系统运行中</span>
+        </div>
       </div>
     </header>
 
@@ -234,72 +263,130 @@ export default defineComponent({
   background-color: var(--bg-primary);
 }
 
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 0 var(--spacing-lg);
-}
-
-.user-avatar-container {
-  position: relative;
-}
-
-.avatar-wrapper {
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.avatar-wrapper:hover {
-  transform: scale(1.05);
-}
-
+/* ===== Header ===== */
 .header {
-  height: 64px;
-  background-color: var(--bg-tertiary);
-  color: var(--text-primary);
+  height: 56px;
+  min-height: 56px;
+  background: var(--bg-tertiary);
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: var(--font-xl);
-  font-weight: 600;
-  box-shadow: var(--shadow-md);
+  justify-content: space-between;
+  padding: 0 var(--spacing-lg);
   position: relative;
-  overflow: hidden;
+  z-index: 10;
   border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-.header::before {
+.header::after {
   content: '';
   position: absolute;
-  top: 0;
+  bottom: -1px;
   left: 0;
   width: 100%;
-  height: 3px;
-  background: linear-gradient(90deg, var(--primary-light), var(--success-color));
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--primary-light) 20%,
+    var(--primary-color) 50%,
+    var(--primary-light) 80%,
+    transparent 100%
+  );
+  opacity: 0.5;
 }
 
-.header-content {
+/* ===== Header Left ===== */
+.header-left {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--spacing-md);
+  gap: 12px;
 }
 
-.logo-container {
-  width: 40px;
-  height: 40px;
-  background-color: var(--primary-light);
+.header-logo {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.logo-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.header-title-group {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.header-brand {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+.header-subtitle {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ===== Header Right ===== */
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-color)) !important;
+  color: #fff !important;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.user-name {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-light);
-  font-size: 24px;
-  box-shadow: var(--shadow-sm);
+  background: var(--success-color);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+  animation: pulse-dot 2s ease-in-out infinite;
 }
 
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+
+.status-text {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+}
+
+/* ===== Main Layout ===== */
 .main-content {
   display: flex;
   flex: 1;
@@ -323,34 +410,37 @@ export default defineComponent({
   transition: all var(--transition-base);
 }
 
-/* 页面过渡动画 */
-.router-view {
-  transition: all var(--transition-base);
-}
-
-/* 自定义ElementUI样式 */
 .el-menu-vertical-demo:not(.el-menu--collapse) {
   width: 240px;
   min-height: 400px;
   background-color: transparent !important;
 }
 
-/* 响应式设计 */
+/* ===== Responsive ===== */
 @media (max-width: 768px) {
   .sidebar {
     width: 200px;
   }
-  
   .el-menu-vertical-demo:not(.el-menu--collapse) {
     width: 200px;
   }
-  
   .content {
     padding: var(--spacing-md);
   }
-  
   .header {
-    font-size: var(--font-lg);
+    height: 48px;
+    min-height: 48px;
+    padding: 0 var(--spacing-md);
+  }
+  .header-brand {
+    font-size: 13px;
+  }
+  .header-subtitle {
+    display: none;
+  }
+  .header-logo {
+    width: 28px;
+    height: 28px;
   }
 }
 </style>
