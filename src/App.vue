@@ -44,9 +44,9 @@
           class="el-menu-vertical-demo"
           @open="handleOpen"
           @close="handleClose"
-          background-color="#f0f9eb"
-          text-color="#303133"
-          active-text-color="#27ae60"
+          background-color="transparent"
+          text-color="#5b616e"
+          active-text-color="#1d4ed8"
           router
         >
           <el-menu-item index="/" 
@@ -265,8 +265,8 @@ export default defineComponent({
 
 /* ===== Header ===== */
 .header {
-  height: 56px;
-  min-height: 56px;
+  height: 52px;
+  min-height: 52px;
   background: var(--bg-tertiary);
   display: flex;
   align-items: center;
@@ -275,25 +275,16 @@ export default defineComponent({
   position: relative;
   z-index: 10;
   border-bottom: 1px solid var(--border-color);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-.header::after {
+.header::before {
   content: '';
   position: absolute;
-  bottom: -1px;
+  top: 0;
   left: 0;
   width: 100%;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--primary-light) 20%,
-    var(--primary-color) 50%,
-    var(--primary-light) 80%,
-    transparent 100%
-  );
-  opacity: 0.5;
+  height: 2px;
+  background: var(--primary-color);
 }
 
 /* ===== Header Left ===== */
@@ -394,12 +385,10 @@ export default defineComponent({
 }
 
 .sidebar {
-  width: 240px;
-  background-color: var(--bg-tertiary);
-  box-shadow: var(--shadow-sm);
+  width: 220px;
+  background-color: var(--bg-secondary);
   overflow-y: auto;
   border-right: 1px solid var(--border-color);
-  transition: all var(--transition-base);
 }
 
 .content {
@@ -407,40 +396,26 @@ export default defineComponent({
   padding: var(--spacing-lg);
   overflow-y: auto;
   background-color: var(--bg-primary);
-  transition: all var(--transition-base);
 }
 
 .el-menu-vertical-demo:not(.el-menu--collapse) {
-  width: 240px;
+  width: 220px;
   min-height: 400px;
   background-color: transparent !important;
 }
 
 /* ===== Responsive ===== */
 @media (max-width: 768px) {
-  .sidebar {
-    width: 200px;
-  }
-  .el-menu-vertical-demo:not(.el-menu--collapse) {
-    width: 200px;
-  }
-  .content {
-    padding: var(--spacing-md);
-  }
+  .sidebar { width: 200px; }
+  .el-menu-vertical-demo:not(.el-menu--collapse) { width: 200px; }
+  .content { padding: var(--spacing-md); }
   .header {
     height: 48px;
     min-height: 48px;
     padding: 0 var(--spacing-md);
   }
-  .header-brand {
-    font-size: 13px;
-  }
-  .header-subtitle {
-    display: none;
-  }
-  .header-logo {
-    width: 28px;
-    height: 28px;
-  }
+  .header-brand { font-size: 13px; }
+  .header-subtitle { display: none; }
+  .header-logo { width: 28px; height: 28px; }
 }
 </style>

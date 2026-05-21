@@ -86,8 +86,8 @@ export default defineComponent({
           .append('svg')
           .attr('width', actualWidth)
           .attr('height', actualHeight)
-          .style('background-color', '#f5f7fa')
-          .style('border-radius', '8px')
+          .style('background-color', '#f1f3f6')
+          .style('border-radius', '6px')
 
       // 添加背景网格线
       const gridLines = svg.append('g')
@@ -101,7 +101,7 @@ export default defineComponent({
           .attr('y1', y)
           .attr('x2', actualWidth)
           .attr('y2', y)
-          .style('stroke', '#999')
+          .style('stroke', '#d5d9df')
           .style('stroke-width', 1)
       }
       
@@ -112,7 +112,7 @@ export default defineComponent({
           .attr('y1', 0)
           .attr('x2', x)
           .attr('y2', actualHeight)
-          .style('stroke', '#999')
+          .style('stroke', '#d5d9df')
           .style('stroke-width', 1)
       }
 
@@ -123,13 +123,13 @@ export default defineComponent({
           .attr('y', y - 70)
           .attr('width', actualWidth)
           .attr('height', 140)
-          .attr('fill', index === 0 ? '#e3f2fd' : index === 1 ? '#e8f5e9' : '#fff8e1')
-          .attr('opacity', 0.6)
+          .attr('fill', index === 0 ? '#eef2ff' : index === 1 ? '#ecfdf5' : '#fefce8')
+          .attr('opacity', 0.5)
       })
 
       // 添加左侧层级标识
       const levelLabels = ['Client', 'EdgeServer', 'Cloud']
-      const levelColors = ['#2196f3', '#4caf50', '#ff9800']
+      const levelColors = ['#3b82f6', '#059669', '#d97706']
       
       levelLabels.forEach((label, index) => {
         const y = levelHeights[index]
@@ -310,8 +310,8 @@ export default defineComponent({
         .attr('orient', 'auto')
         .append('path')
         .attr('d', 'M0,-4L10,0L0,4')
-        .attr('fill', '#666')
-        .attr('stroke', '#666')
+        .attr('fill', '#5b616e')
+        .attr('stroke', '#5b616e')
         .attr('stroke-width', 0.5)
       
       // 备份关系箭头
@@ -474,14 +474,14 @@ export default defineComponent({
       node.append('circle')
         .attr('r', nodeRadius * 1.2)
         .attr('fill', d => {
-          if (d.group === 1) return '#e3f2fd'
-          if (d.group === 2) return '#e8f5e9'
-          return '#fff8e1'
+          if (d.group === 1) return '#eef2ff'
+          if (d.group === 2) return '#ecfdf5'
+          return '#fefce8'
         })
         .attr('stroke', d => {
-          if (d.group === 1) return '#2196f3'
-          if (d.group === 2) return '#4caf50'
-          return '#ff9800'
+          if (d.group === 1) return '#3b82f6'
+          if (d.group === 2) return '#059669'
+          return '#d97706'
         })
         .attr('stroke-width', 2)
         .style('transition', 'all 0.3s ease-in-out')
@@ -504,7 +504,7 @@ export default defineComponent({
       node.append('text')
         .attr('dy', nodeRadius + 22)
         .attr('text-anchor', 'middle')
-        .attr('fill', '#333')
+        .attr('fill', '#1a1d23')
         .attr('font-size', Math.max(nodeRadius / 3.2, 11))
         .attr('font-weight', 'bold')
         .attr('pointer-events', 'none')
@@ -631,28 +631,27 @@ export default defineComponent({
 
 <style scoped>
 .overview-container {
-  padding: 20px;
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
 }
 
 .header-actions {
   display: flex;
   justify-content: flex-end;
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-md);
 }
 
 .topology-diagram {
-  margin-top: 20px;
+  margin-top: var(--spacing-md);
 }
 
 .topology-diagram h2 {
   text-align: center;
-  color: #333;
-  font-size: 24px;
+  color: var(--text-primary);
+  font-size: var(--font-2xl);
   font-weight: 600;
-  margin-bottom: 15px;
+  margin-bottom: var(--spacing-md);
 }
 
 #topology-container {
@@ -660,25 +659,14 @@ export default defineComponent({
   height: 70vh;
   min-height: 500px;
   max-height: 900px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  background: var(--bg-secondary);
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
-  .overview-container {
-    padding: 10px;
-  }
-  
-  .topology-diagram h2 {
-    font-size: 20px;
-  }
-  
-  #topology-container {
-    height: 60vh;
-    min-height: 400px;
-  }
+  .topology-diagram h2 { font-size: var(--font-xl); }
+  #topology-container { height: 60vh; min-height: 400px; }
 }
 </style>
